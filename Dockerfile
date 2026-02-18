@@ -1,5 +1,5 @@
 # Gradle 8.11 + JDK 21 이미지를 빌드 환경으로 사용
-FROM gradle:8.11-jdk21 AS build
+FROM gradle:8.14-jdk21 AS build
 
 # 컨테이너 안의 작업 디렉토리 설정
 WORKDIR /app
