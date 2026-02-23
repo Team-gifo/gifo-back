@@ -47,6 +47,10 @@ dependencies {
 
 	// 테스트용 H2 DB
 	runtimeOnly 'com.h2database:h2'
+
+	// Spring AI - Azure OpenAI
+	implementation platform('org.springframework.ai:spring-ai-bom:2.0.0-M1')
+	implementation 'org.springframework.ai:spring-ai-starter-model-azure-openai'
 }
 
 tasks.named('test') {
