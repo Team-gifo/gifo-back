@@ -9,8 +9,8 @@ import org.springframework.context.annotation.Configuration;
 
 @OpenAPIDefinition(
         servers = {
-                @Server(url = "https://earnedit.site", description = "Earnedit https 서버입니다."),
-                @Server(url = "http://localhost:8080", description = "Earnedit local 서버입니다.")
+                @Server(url = "${API_SERVER_URL}", description = "gifo https 서버입니다."),
+                @Server(url = "http://localhost:8080", description = "gifo local 서버입니다.")
         }
 )
 @Configuration
