@@ -23,7 +23,10 @@ public enum ErrorCode {
     VALIDATION_ERROR(HttpStatus.BAD_REQUEST, "유효성 검증 실패"),
 
     // 외부 API 오류
-    NAVER_API_ERROR(HttpStatus.BAD_GATEWAY, "네이버 쇼핑 API 호출에 실패했습니다.");
+    NAVER_API_ERROR(HttpStatus.BAD_GATEWAY, "네이버 쇼핑 API 호출에 실패했습니다."),
+
+    // AI 큐레이션 오류
+    AI_CURATE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "AI 큐레이션 생성에 실패했습니다.");
 
     private final HttpStatus httpStatus;
     private final String defaultMessage;
