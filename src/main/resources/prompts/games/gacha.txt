@@ -1,0 +1,4 @@
+### gacha (캡슐 뽑기)
+- **play_count**: 숫자 (예: 3). 전체 가챌 기회.
+- **list**: 배열. 항목: item_name, image_url, percent(0~1 소수), percent_open(true/false).
+- 상황에 맞는 경품 1~3개로 구성.
