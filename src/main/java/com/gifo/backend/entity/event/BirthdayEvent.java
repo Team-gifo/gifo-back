@@ -13,7 +13,6 @@ import java.util.List;
 @Entity
 @Table(name = "birthday_event")
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -27,6 +26,7 @@ public class BirthdayEvent {
     @Column(name = "event_url", unique = true)
     private String eventUrl;
 
+    @Setter
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
     private EventStatus status;

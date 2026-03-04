@@ -10,7 +10,6 @@ import java.util.List;
 @Entity
 @Table(name = "quiz")
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

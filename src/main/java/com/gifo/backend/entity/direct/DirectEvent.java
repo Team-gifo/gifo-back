@@ -10,7 +10,6 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "direct_event")
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

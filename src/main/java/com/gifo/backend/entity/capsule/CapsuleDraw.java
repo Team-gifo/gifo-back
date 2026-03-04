@@ -8,7 +8,6 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "capsule_draw")
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

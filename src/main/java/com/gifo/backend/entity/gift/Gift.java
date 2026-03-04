@@ -13,7 +13,6 @@ import java.util.List;
 @Entity
 @Table(name = "gift")
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -33,6 +32,7 @@ public class Gift {
     @Column(name = "description")
     private String description;
 
+    @Setter
     @Column(name = "is_hidden")
     private Boolean isHidden;
 
