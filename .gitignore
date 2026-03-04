@@ -38,3 +38,5 @@ out/
 
 ### .env 제외
 *.env
+### claude MD 제외
+.claude/
