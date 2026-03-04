@@ -42,7 +42,6 @@ docker build -t gifo-backend:latest .
 ## 알려진 문제
 
 - `AiProperties.java`의 `@ConfigurationProperties(prefix = "azure.openai")`가 실제 yml 경로 `spring.ai.azure.openai`와 다름. 현재 dead code이므로 사용하지 말 것 — AI 설정은 `AiConfig`의 `ChatClient` 빈을 사용.
-- `application.yml`의 `springdoc` 설정이 `spring:` 하위에 중첩되어 있음 (`spring.springdoc.xxx`). 올바른 위치는 루트 레벨 (`springdoc.xxx`). Swagger 경로 커스터마이징이 무시될 수 있음.
 
 ## 아키텍처
 
@@ -219,7 +218,22 @@ return ResponseEntity.ok(ApiResponse.success("삭제 성공"));         // 데�
 
 ## 커밋 메시지 컨벤션
 
-`[chore]`, `[feat]`, `[fix]`, `[refactor]` 접두어 사용 (한국어 설명).
+형식: `[type] 설명` (한국어 설명)
+
+| type | 의미 | 사용 예시 |
+|------|------|-----------|
+| `feat` | 새로운 기능 추가 | feat: 게시글 등록 API 구현 |
+| `fix` | 버그 수정 | fix: JWT 검증 오류 수정 |
+| `refactor` | 기능 변화 없는 코드 리팩토링 | refactor: 서비스 로직 구조 개선 |
+| `style` | 코드 스타일 변경 (포맷, 공백 등) | style: 코드 포맷 정리 |
+| `docs` | 문서 수정 | docs: README 업데이트 |
+| `test` | 테스트 코드 추가/수정 | test: 회원가입 서비스 테스트 추가 |
+| `chore` | 설정, 빌드, 의존성, 환경파일 변경 | chore: application.yml 설정 수정 |
+| `deploy` | 배포 관련 작업 | deploy: 운영 배포 설정 수정 |
+| `remove` | 코드/파일 삭제 | remove: 사용하지 않는 DTO 삭제 |
+| `hotfix` | 긴급 수정 | hotfix: 운영 서버 로그인 오류 수정 |
+| `perf` | 성능 개선 | perf: DB 조회 쿼리 최적화 |
+| `init` | 초기 프로젝트 생성 | init: Spring Boot 프로젝트 생성 |
 
 ## PR 작성 규칙
 
