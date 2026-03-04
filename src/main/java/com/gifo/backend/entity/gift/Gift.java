@@ -36,6 +36,9 @@ public class Gift {
     @Column(name = "is_hidden")
     private Boolean isHidden;
 
+    @Column(name = "is_probability_public")
+    private Boolean isProbabilityPublic;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

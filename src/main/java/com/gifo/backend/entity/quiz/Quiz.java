@@ -35,6 +35,15 @@ public class Quiz {
     @Column(name = "hint")
     private String hint;
 
+    @Column(name = "image_url")
+    private String imageUrl;
+
+    @Column(name = "description")
+    private String description;
+
+    @Column(name = "play_limit")
+    private Integer playLimit;
+
     @Column(name = "sort_order")
     private Integer sortOrder;
 
