@@ -221,6 +221,25 @@ return ResponseEntity.ok(ApiResponse.success("삭제 성공"));         // 데�
 
 `[chore]`, `[feat]`, `[fix]`, `[refactor]` 접두어 사용 (한국어 설명).
 
+## PR 작성 규칙
+
+PR 본문은 반드시 `docs/pull_request_template.md` 양식을 따릅니다.
+
+```
+## 📌 작업 개요
+## ✨ 주요 변경 사항
+## 🖼️ 기능 살펴 보기
+## ✅ 작업 체크리스트
+## 📂 테스트 방법
+## 💬 기타 참고 사항
+## 📎 관련 이슈 / 문서
+```
+
+`gh` CLI로 PR 생성 시:
+```bash
+gh pr create --title "제목" --body "$(cat docs/pull_request_template.md)"
+```
+
 ## CI/CD
 
 `main` 브랜치 push 시 GitHub Actions가 `Team-gifo/gifo-deploy` 레포에 `repository_dispatch` 이벤트를 전송해 배포를 트리거합니다. `ACCESS_TOKEN` secret이 필요합니다.
