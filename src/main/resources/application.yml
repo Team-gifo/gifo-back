@@ -23,9 +23,9 @@ spring:
           options:
             deployment-name: ${AZURE_OPENAI_DEPLOYMENT_NAME}
 
-  # Swagger 설정
-  springdoc:
-    api-docs:
-      path: /api-docs  # OpenAPI JSON 경로 설정 (/v3/api-docs → /api-docs)
-    swagger-ui:
-      path: /swagger-ui.html  # Swagger UI 접속 경로
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
