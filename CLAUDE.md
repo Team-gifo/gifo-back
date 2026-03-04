@@ -48,33 +48,151 @@ docker build -t gifo-backend:latest .
 
 ### 패키지 구조
 
-도메인별 패키지 구조를 사용합니다. 새 기능은 `com.gifo.backend.{domain}/` 하위에 구성합니다.
+레이어별로 중앙화하고, 각 레이어 안에서 도메인 서브패키지로 나눕니다.
 
 ```
 com.gifo.backend/
+├── entity/                    # JPA 엔티티
+│   ├── event/                 # BirthdayEvent, Memory, EventStatus
+│   ├── gift/                  # Gift
+│   ├── capsule/               # CapsuleEvent, Capsule, CapsuleDraw
+│   ├── direct/                # DirectEvent
+│   └── quiz/                  # QuizEvent, Quiz, QuizChoice, QuizAttempt, QuizRewardRule, QuizType
+├── repository/                # Spring Data JPA 레포지토리
+│   ├── event/                 # BirthdayEventRepository, MemoryRepository
+│   ├── gift/                  # GiftRepository
+│   ├── capsule/               # CapsuleEventRepository, CapsuleRepository, CapsuleDrawRepository
+│   ├── direct/                # DirectEventRepository
+│   └── quiz/                  # QuizEventRepository, QuizRepository, ...
+├── service/                   # 비즈니스 로직
+│   ├── event/                 # EventService
+│   ├── gift/                  # GiftService
+│   ├── capsule/               # CapsuleService
+│   ├── direct/                # DirectService
+│   └── quiz/                  # QuizService
+├── controller/                # REST 컨트롤러
+│   ├── event/
+│   ├── gift/
+│   ├── capsule/
+│   ├── direct/
+│   └── quiz/
+├── dto/                       # DTO (Request / Response)
+│   ├── event/
+│   ├── gift/
+│   ├── capsule/
+│   ├── direct/
+│   └── quiz/
+├── mapper/                    # MapStruct 매퍼
+│   ├── event/
+│   └── ...
 ├── global/                    # 공통 관심사
 │   ├── ApiResponse            # 공통 응답 래퍼 {code, message, data<T>}
 │   ├── ErrorCode              # 에러 코드 enum
 │   ├── ErrorResponse          # 에러 응답 바디
+│   ├── util/
+│   │   └── EntityFinder       # DB 단순 조회 예외 처리 유틸리티
 │   └── exception/
 │       ├── CustomException              # 기본 커스텀 예외
 │       ├── GlobalExceptionHandler       # @RestControllerAdvice
 │       └── {domain}/                   # 도메인별 예외 패키지
 │           └── {Domain}Exception.java  # CustomException 확장
-├── util/
-│   └── EntityFinder           # DB 단순 조회 예외 처리 유틸리티
-├── ai/                        # Azure OpenAI 도메인
-│   ├── config/                # AiConfig (ChatClient 빈)
+├── ai/                        # Azure OpenAI
+│   ├── config/
 │   └── controller/
 ├── config/                    # SwaggerConfig
-├── healthcheck/
-└── {domain}/                  # 새 도메인 (예: member, gift ...)
-    ├── controller/
-    ├── service/
-    ├── repository/
-    ├── entity/
-    ├── dto/                   # 도메인별 DTO
-    └── mapper/                # MapStruct 매퍼 인터페이스
+└── healthcheck/
+```
+
+### 새 도메인 추가 체크리스트
+
+도메인 `{domain}` (예: `member`)을 추가할 때 아래 순서로 파일을 생성합니다.
+
+**1. 엔티티** — `entity/{domain}/`
+```
+패키지: com.gifo.backend.entity.member
+파일:   Member.java
+```
+
+**2. 레포지토리** — `repository/{domain}/`
+```java
+// 패키지: com.gifo.backend.repository.member
+public interface MemberRepository extends JpaRepository<Member, Long> {
+}
+```
+
+**3. 도메인 예외** — `global/exception/{domain}/`
+```java
+// 패키지: com.gifo.backend.global.exception.member
+public class MemberException extends CustomException {
+    public MemberException(ErrorCode errorCode) {
+        super(errorCode);
+    }
+}
+```
+
+**4. 에러 코드** — `global/ErrorCode.java`에 도메인 섹션 추가
+```java
+// Member 도메인
+MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "회원을 찾을 수 없습니다."),
+```
+
+**5. EntityFinder** — `global/util/EntityFinder.java`에 레포지토리 주입 및 메서드 추가
+```java
+private final MemberRepository memberRepository;
+
+public Member getMemberOrThrow(Long memberId) {
+    return memberRepository.findById(memberId)
+            .orElseThrow(() -> new MemberException(ErrorCode.MEMBER_NOT_FOUND));
+}
+```
+
+**6. DTO** — `dto/{domain}/`
+```
+패키지: com.gifo.backend.dto.member
+파일:   MemberCreateRequest.java, MemberResponse.java
+```
+
+**7. Mapper (필요 시)** — `mapper/{domain}/`
+```java
+// 패키지: com.gifo.backend.mapper.member
+@Mapper(componentModel = "spring")
+public interface MemberMapper {
+    MemberResponse toResponse(Member member);
+}
+```
+
+**8. 서비스** — `service/{domain}/`
+```java
+// 패키지: com.gifo.backend.service.member
+@Service
+@RequiredArgsConstructor
+public class MemberService {
+    private final MemberRepository memberRepository;
+    private final EntityFinder entityFinder;
+    private final MemberMapper memberMapper;
+
+    public MemberResponse getMember(Long id) {
+        Member member = entityFinder.getMemberOrThrow(id);
+        return memberMapper.toResponse(member);
+    }
+}
+```
+
+**9. 컨트롤러** — `controller/{domain}/`
+```java
+// 패키지: com.gifo.backend.controller.member
+@RestController
+@RequestMapping("/members")
+@Tag(name = "Member API", description = "회원 관련 API")
+@RequiredArgsConstructor
+public class MemberController {
+    private final MemberService memberService;
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<MemberResponse>> getMember(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success("조회 성공", memberService.getMember(id)));
+    }
+}
 ```
 
 ### 핵심 패턴
@@ -83,88 +201,12 @@ com.gifo.backend/
 모든 컨트롤러 응답은 `ApiResponse<T>` 래퍼를 사용합니다.
 
 ```java
-// 데이터 포함 응답
-return ResponseEntity.ok(ApiResponse.success("조회 성공", data));
-
-// 데이터 없는 응답
-return ResponseEntity.ok(ApiResponse.success("삭제 성공"));
+return ResponseEntity.ok(ApiResponse.success("조회 성공", data));  // 데이터 포함
+return ResponseEntity.ok(ApiResponse.success("삭제 성공"));         // 데이터 없음
 ```
 
 #### 예외 처리
-**1단계** — `ErrorCode` enum에 도메인별 에러 코드를 추가합니다.
-
-```java
-// ErrorCode.java 에 도메인 섹션 추가
-// Member 도메인
-MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "회원을 찾을 수 없습니다."),
-MEMBER_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 회원입니다."),
-```
-
-**2단계** — `global/exception/{domain}/` 패키지에 `CustomException`을 확장하는 도메인 예외 클래스를 정의합니다.
-
-```java
-// global/exception/member/MemberNotFoundException.java
-public class MemberNotFoundException extends CustomException {
-    public MemberNotFoundException() {
-        super(ErrorCode.MEMBER_NOT_FOUND);
-    }
-}
-```
-
-**3단계** — `global/util/EntityFinder`에 도메인 Repository를 주입하고 `get{Entity}OrThrow` 메서드를 추가합니다.
-
-```java
-// global/util/EntityFinder.java 에 추가
-@Component
-@RequiredArgsConstructor
-public class EntityFinder {
-
-    private final MemberRepository memberRepository;
-
-    public Member getMemberOrThrow(Long memberId) {
-        return memberRepository.findById(memberId)
-                .orElseThrow(() -> new MemberException(ErrorCode.MEMBER_NOT_FOUND));
-    }
-}
-```
-
-서비스에서는 `EntityFinder`를 주입받아 호출합니다.
-
-```java
-@RequiredArgsConstructor
-public class MemberService {
-    private final EntityFinder entityFinder;
-
-    public MemberResponse getMember(Long id) {
-        Member member = entityFinder.getMemberOrThrow(id);
-        // ...
-    }
-}
-```
-
-`GlobalExceptionHandler`가 `CustomException`을 catch하므로 별도 핸들러 추가 없이 자동 처리됩니다.
-
-#### DTO
-도메인별 `dto/` 패키지에 Request/Response DTO를 정의합니다.
-
-```
-member/dto/MemberCreateRequest.java
-member/dto/MemberResponse.java
-```
-
-#### MapStruct
-엔티티 ↔ DTO 변환이 필요한 경우 도메인별 `mapper/` 패키지에 MapStruct 인터페이스를 정의합니다.
-
-```java
-// member/mapper/MemberMapper.java
-@Mapper(componentModel = "spring")
-public interface MemberMapper {
-    MemberResponse toResponse(Member member);
-    Member toEntity(MemberCreateRequest request);
-}
-```
-
-서비스에서 `@RequiredArgsConstructor`로 주입받아 사용합니다. `componentModel = "spring"` 필수.
+`GlobalExceptionHandler`가 `CustomException`을 catch하므로 도메인 예외만 throw하면 자동 처리됩니다. 위 체크리스트의 3~5단계를 따릅니다. `componentModel = "spring"` 필수.
 
 #### AI
 `AiConfig`가 생성한 `ChatClient` 빈을 서비스/컨트롤러에 주입해 사용합니다.
