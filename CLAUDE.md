@@ -237,7 +237,8 @@ return ResponseEntity.ok(ApiResponse.success("삭제 성공"));         // 데�
 
 ## PR 작성 규칙
 
-PR 본문은 반드시 `docs/pull_request_template.md` 양식을 따릅니다.
+- 작업 단위가 다르면 브랜치를 분리하고 PR을 새로 생성합니다. 기존 PR에 관련 없는 변경사항을 추가하지 않습니다.
+- PR 본문은 반드시 `docs/pull_request_template.md` 양식을 따릅니다.
 
 ```
 ## 📌 작업 개요
