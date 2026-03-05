@@ -1,17 +1,16 @@
 package com.gifo.backend.entity.capsule;
 
+import com.gifo.backend.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-
-import java.time.LocalDateTime;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @Table(name = "capsule_draw")
 @Getter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class CapsuleDraw {
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@SuperBuilder
+public class CapsuleDraw extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,7 +24,4 @@ public class CapsuleDraw {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "capsule_id", nullable = false)
     private Capsule capsule;
-
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
 }

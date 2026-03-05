@@ -1,19 +1,18 @@
 package com.gifo.backend.entity.direct;
 
+import com.gifo.backend.entity.BaseEntity;
 import com.gifo.backend.entity.event.BirthdayEvent;
 import com.gifo.backend.entity.gift.Gift;
 import jakarta.persistence.*;
 import lombok.*;
-
-import java.time.LocalDateTime;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @Table(name = "direct_event")
 @Getter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class DirectEvent {
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@SuperBuilder
+public class DirectEvent extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,7 +32,4 @@ public class DirectEvent {
 
     @Column(name = "before_description")
     private String beforeDescription;
-
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
 }

@@ -1,17 +1,16 @@
 package com.gifo.backend.entity.quiz;
 
+import com.gifo.backend.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-
-import java.time.LocalDateTime;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @Table(name = "quiz_attempt")
 @Getter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class QuizAttempt {
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@SuperBuilder
+public class QuizAttempt extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -31,7 +30,4 @@ public class QuizAttempt {
 
     @Column(name = "is_correct")
     private Boolean isCorrect;
-
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
 }

@@ -1,20 +1,20 @@
 package com.gifo.backend.entity.quiz;
 
+import com.gifo.backend.entity.BaseEntity;
 import com.gifo.backend.entity.event.BirthdayEvent;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name = "quiz_event")
 @Getter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class QuizEvent {
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@SuperBuilder
+public class QuizEvent extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,9 +28,6 @@ public class QuizEvent {
     @Setter
     @Column(name = "total_attempt")
     private Integer totalAttempt;
-
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
 
     @Builder.Default
     @OneToMany(mappedBy = "quizEvent", fetch = FetchType.LAZY)

@@ -1,18 +1,17 @@
 package com.gifo.backend.entity.quiz;
 
+import com.gifo.backend.entity.BaseEntity;
 import com.gifo.backend.entity.gift.Gift;
 import jakarta.persistence.*;
 import lombok.*;
-
-import java.time.LocalDateTime;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @Table(name = "quiz_reward_rule")
 @Getter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class QuizRewardRule {
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@SuperBuilder
+public class QuizRewardRule extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,7 +28,4 @@ public class QuizRewardRule {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "gift_id", nullable = false)
     private Gift gift;
-
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
 }

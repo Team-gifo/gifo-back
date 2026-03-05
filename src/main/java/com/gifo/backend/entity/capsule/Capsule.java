@@ -1,20 +1,20 @@
 package com.gifo.backend.entity.capsule;
 
+import com.gifo.backend.entity.BaseEntity;
 import com.gifo.backend.entity.gift.Gift;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name = "capsule")
 @Getter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class Capsule {
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@SuperBuilder
+public class Capsule extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -31,9 +31,6 @@ public class Capsule {
 
     @Column(name = "weight")
     private Integer weight;
-
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
 
     @Builder.Default
     @OneToMany(mappedBy = "capsule", fetch = FetchType.LAZY)
