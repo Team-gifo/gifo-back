@@ -29,3 +29,4 @@ springdoc:
     path: /api-docs
   swagger-ui:
     path: /swagger-ui.html
+    url: /api/api-docs
