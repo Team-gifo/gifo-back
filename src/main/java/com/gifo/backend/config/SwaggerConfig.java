@@ -23,12 +23,10 @@ public class SwaggerConfig {
                         .description("Gifo API 명세입니다.")
                         .version("v1.0.0"));
 
-        if (apiServerUrl != null && !apiServerUrl.isBlank()) {
-            openAPI.servers(List.of(
-                    new Server().url(apiServerUrl).description("gifo https 서버입니다."),
-                    new Server().url("http://localhost:8080").description("gifo local 서버입니다.")
-            ));
-        }
+        String serverUrl = (apiServerUrl != null && !apiServerUrl.isBlank())
+                ? apiServerUrl
+                : "http://localhost:8080";
+        openAPI.servers(List.of(new Server().url(serverUrl)));
 
         return openAPI;
     }
