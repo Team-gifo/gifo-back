@@ -22,6 +22,10 @@ public enum ErrorCode {
     EMPTY_RESULT(HttpStatus.NOT_FOUND, "결과가 존재하지 않습니다."),
     VALIDATION_ERROR(HttpStatus.BAD_REQUEST, "유효성 검증 실패"),
 
+    // 이벤트 도메인
+    EVENT_NOT_FOUND(HttpStatus.NOT_FOUND, "이벤트를 찾을 수 없습니다."),
+    EVENT_URL_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "이벤트 URL 생성에 실패했습니다."),
+
     // 외부 API 오류
     NAVER_API_ERROR(HttpStatus.BAD_GATEWAY, "네이버 쇼핑 API 호출에 실패했습니다.");
 

@@ -8,7 +8,6 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "memory")
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

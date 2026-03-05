@@ -11,7 +11,6 @@ import java.util.List;
 @Entity
 @Table(name = "quiz_event")
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -26,6 +25,7 @@ public class QuizEvent {
     @JoinColumn(name = "event_id", nullable = false, unique = true)
     private BirthdayEvent birthdayEvent;
 
+    @Setter
     @Column(name = "total_attempt")
     private Integer totalAttempt;
 

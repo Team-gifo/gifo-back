@@ -13,7 +13,6 @@ import java.util.List;
 @Entity
 @Table(name = "gift")
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -33,8 +32,12 @@ public class Gift {
     @Column(name = "description")
     private String description;
 
+    @Setter
     @Column(name = "is_hidden")
     private Boolean isHidden;
+
+    @Column(name = "is_probability_public")
+    private Boolean isProbabilityPublic;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;

@@ -9,7 +9,6 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "quiz_reward_rule")
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

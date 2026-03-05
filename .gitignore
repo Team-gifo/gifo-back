@@ -40,3 +40,4 @@ out/
 *.env
 ### claude MD 제외
 .claude/
+/gifo-ssh-key.pem
