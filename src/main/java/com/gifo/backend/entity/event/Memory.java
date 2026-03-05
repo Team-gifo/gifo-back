@@ -1,17 +1,16 @@
 package com.gifo.backend.entity.event;
 
+import com.gifo.backend.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-
-import java.time.LocalDateTime;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @Table(name = "memory")
 @Getter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class Memory {
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@SuperBuilder
+public class Memory extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,7 +32,4 @@ public class Memory {
 
     @Column(name = "sort_order")
     private Integer sortOrder;
-
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
 }

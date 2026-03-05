@@ -1,10 +1,12 @@
 package com.gifo.backend.entity.event;
 
+import com.gifo.backend.entity.BaseEntity;
 import com.gifo.backend.entity.capsule.CapsuleEvent;
 import com.gifo.backend.entity.direct.DirectEvent;
 import com.gifo.backend.entity.quiz.QuizEvent;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -13,10 +15,9 @@ import java.util.List;
 @Entity
 @Table(name = "birthday_event")
 @Getter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class BirthdayEvent {
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@SuperBuilder
+public class BirthdayEvent extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -45,9 +46,6 @@ public class BirthdayEvent {
 
     @Column(name = "bgm_url")
     private String bgmUrl;
-
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
 
     @Column(name = "expired_at")
     private LocalDateTime expiredAt;

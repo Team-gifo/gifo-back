@@ -1,19 +1,19 @@
 package com.gifo.backend.entity.quiz;
 
+import com.gifo.backend.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name = "quiz")
 @Getter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class Quiz {
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@SuperBuilder
+public class Quiz extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -45,9 +45,6 @@ public class Quiz {
 
     @Column(name = "sort_order")
     private Integer sortOrder;
-
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
 
     @Builder.Default
     @OneToMany(mappedBy = "quiz", fetch = FetchType.LAZY)

@@ -1,22 +1,22 @@
 package com.gifo.backend.entity.gift;
 
+import com.gifo.backend.entity.BaseEntity;
 import com.gifo.backend.entity.capsule.Capsule;
 import com.gifo.backend.entity.direct.DirectEvent;
 import com.gifo.backend.entity.quiz.QuizRewardRule;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name = "gift")
 @Getter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class Gift {
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@SuperBuilder
+public class Gift extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -38,9 +38,6 @@ public class Gift {
 
     @Column(name = "is_probability_public")
     private Boolean isProbabilityPublic;
-
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
 
     @Builder.Default
     @OneToMany(mappedBy = "gift", fetch = FetchType.LAZY)
