@@ -31,6 +31,7 @@ public enum ErrorCode {
     // 캡슐 도메인
     CAPSULE_NOT_FOUND(HttpStatus.NOT_FOUND, "캡슐 이벤트를 찾을 수 없습니다."),
     CAPSULE_DRAW_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "뽑기 가능 횟수를 초과했습니다."),
+    CAPSULE_ALL_DRAWN(HttpStatus.BAD_REQUEST, "모든 캡슐을 이미 뽑았습니다."),
 
     // 퀴즈 도메인
     QUIZ_NOT_FOUND(HttpStatus.NOT_FOUND, "퀴즈 이벤트를 찾을 수 없습니다."),

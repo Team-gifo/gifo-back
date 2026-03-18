@@ -127,14 +127,24 @@ public class BirthdayEventService {
     }
 
     // ── 가차 콘텐츠 빌드 ─────────────────────────────
-    // 남은 뽑기 횟수 계산 + 각 캡슐의 실제 확률 계산 (weight/totalWeight)
+    // 이미 뽑힌 캡슐 제외 → 남은 캡슐만 반환 + 남은 뽑기 횟수 계산
     private EventResponse.GachaContent buildGachaContent(CapsuleEvent capsuleEvent) {
-        List<Capsule> capsules = capsuleRepository.findByCapsuleEvent(capsuleEvent);
-        int totalWeight = capsules.stream().mapToInt(Capsule::getWeight).sum();
-        long drawCount = capsuleDrawRepository.countByCapsuleEvent(capsuleEvent);
-        int remaining = capsuleEvent.getMaxDrawCount() - (int) drawCount;
+        List<Capsule> allCapsules = capsuleRepository.findByCapsuleEvent(capsuleEvent);
+        List<Capsule> drawnCapsules = capsuleDrawRepository.findDrawnCapsulesByCapsuleEvent(capsuleEvent);
 
-        List<EventResponse.GachaItem> items = capsules.stream()
+        // 이미 뽑힌 캡슐 제외
+        List<Capsule> remainingCapsules = allCapsules.stream()
+                .filter(c -> !drawnCapsules.contains(c))
+                .toList();
+
+        int totalWeight = remainingCapsules.stream().mapToInt(Capsule::getWeight).sum();
+        long drawCount = capsuleDrawRepository.countByCapsuleEvent(capsuleEvent);
+        int remainingDraws = Math.min(
+                capsuleEvent.getMaxDrawCount() - (int) drawCount,
+                remainingCapsules.size()
+        );
+
+        List<EventResponse.GachaItem> items = remainingCapsules.stream()
                 .map(c -> new EventResponse.GachaItem(
                         c.getGift().getGiftName(),
                         c.getGift().getGiftImageUrl(),
@@ -142,7 +152,7 @@ public class BirthdayEventService {
                         c.getGift().getIsProbabilityPublic()))
                 .toList();
 
-        return new EventResponse.GachaContent(capsuleEvent.getMaxDrawCount(), remaining, items);
+        return new EventResponse.GachaContent(capsuleEvent.getMaxDrawCount(), remainingDraws, items);
     }
 
     // ── 퀴즈 콘텐츠 빌드 ─────────────────────────────

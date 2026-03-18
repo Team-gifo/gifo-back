@@ -54,9 +54,19 @@ public class CapsuleService {
             throw new CapsuleException(ErrorCode.CAPSULE_DRAW_LIMIT_EXCEEDED);
         }
 
-        // 가중치 기반 랜덤 추첨
-        List<Capsule> capsules = capsuleRepository.findByCapsuleEvent(capsuleEvent);
-        Capsule drawn = weightedRandom(capsules);
+        // 이미 뽑힌 캡슐 제외 → 남은 캡슐 풀 구성
+        List<Capsule> allCapsules = capsuleRepository.findByCapsuleEvent(capsuleEvent);
+        List<Capsule> drawnCapsules = capsuleDrawRepository.findDrawnCapsulesByCapsuleEvent(capsuleEvent);
+        List<Capsule> remaining = allCapsules.stream()
+                .filter(c -> !drawnCapsules.contains(c))
+                .toList();
+
+        if (remaining.isEmpty()) {
+            throw new CapsuleException(ErrorCode.CAPSULE_ALL_DRAWN);
+        }
+
+        // 남은 캡슐 중 가중치 기반 랜덤 추첨
+        Capsule drawn = weightedRandom(remaining);
 
         // 뽑기 이력 저장
         capsuleDrawRepository.save(CapsuleDraw.builder()
