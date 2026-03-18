@@ -25,6 +25,15 @@ public enum ErrorCode {
     // 이벤트 도메인
     EVENT_NOT_FOUND(HttpStatus.NOT_FOUND, "이벤트를 찾을 수 없습니다."),
     EVENT_URL_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "이벤트 URL 생성에 실패했습니다."),
+    EVENT_EXPIRED(HttpStatus.GONE, "만료된 이벤트입니다."),
+    EVENT_DELETED(HttpStatus.NOT_FOUND, "삭제된 이벤트입니다."),
+
+    // 캡슐 도메인
+    CAPSULE_NOT_FOUND(HttpStatus.NOT_FOUND, "캡슐 이벤트를 찾을 수 없습니다."),
+    CAPSULE_DRAW_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "뽑기 가능 횟수를 초과했습니다."),
+
+    // 퀴즈 도메인
+    QUIZ_NOT_FOUND(HttpStatus.NOT_FOUND, "퀴즈 이벤트를 찾을 수 없습니다."),
 
     // 외부 API 오류
     NAVER_API_ERROR(HttpStatus.BAD_GATEWAY, "네이버 쇼핑 API 호출에 실패했습니다.");

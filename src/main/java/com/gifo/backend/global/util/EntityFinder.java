@@ -1,6 +1,7 @@
 package com.gifo.backend.global.util;
 
 import com.gifo.backend.entity.event.BirthdayEvent;
+import com.gifo.backend.entity.event.EventStatus;
 import com.gifo.backend.global.ErrorCode;
 import com.gifo.backend.global.exception.event.EventException;
 import com.gifo.backend.repository.event.BirthdayEventRepository;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Component;
  *
  * 사용 예시:
  * BirthdayEvent event = entityFinder.getEventOrThrow(eventId);
+ * BirthdayEvent event = entityFinder.getEventByUrlOrThrow(eventUrl);
  */
 @Component
 @RequiredArgsConstructor
@@ -23,5 +25,22 @@ public class EntityFinder {
     public BirthdayEvent getEventOrThrow(Long eventId) {
         return birthdayEventRepository.findById(eventId)
                 .orElseThrow(() -> new EventException(ErrorCode.EVENT_NOT_FOUND));
+    }
+
+    /**
+     * eventUrl로 이벤트를 조회하고, 상태(EXPIRED/DELETED)를 검증합니다.
+     * ACTIVE 상태의 이벤트만 정상 반환됩니다.
+     */
+    public BirthdayEvent getEventByUrlOrThrow(String eventUrl) {
+        BirthdayEvent event = birthdayEventRepository.findByEventUrl(eventUrl)
+                .orElseThrow(() -> new EventException(ErrorCode.EVENT_NOT_FOUND));
+
+        if (event.getStatus() == EventStatus.EXPIRED) {
+            throw new EventException(ErrorCode.EVENT_EXPIRED);
+        }
+        if (event.getStatus() == EventStatus.DELETED) {
+            throw new EventException(ErrorCode.EVENT_DELETED);
+        }
+        return event;
     }
 }
