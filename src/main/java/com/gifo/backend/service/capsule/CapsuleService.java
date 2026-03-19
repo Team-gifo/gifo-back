@@ -46,9 +46,7 @@ public class CapsuleService {
 
     public CapsuleResponse.Draw drawCapsule(String eventUrl) {
         // 비관적 락으로 동시 뽑기 요청 방지
-        BirthdayEvent event = birthdayEventRepository.findByEventUrlForUpdate(eventUrl)
-                .orElseThrow(() -> new CapsuleException(ErrorCode.EVENT_NOT_FOUND));
-        entityFinder.validateEventStatus(event);
+        BirthdayEvent event = entityFinder.getEventByUrlForUpdateOrThrow(eventUrl);
 
         CapsuleEvent capsuleEvent = event.getCapsuleEvent();
         if (capsuleEvent == null) {

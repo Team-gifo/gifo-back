@@ -32,7 +32,7 @@
 | `CAPSULE_DRAW_LIMIT_EXCEEDED` | 400 | 뽑기 횟수 초과 |
 | `CAPSULE_ALL_DRAWN` | 400 | 모든 캡슐을 이미 뽑음 |
 | `QUIZ_NOT_FOUND` | 404 | 퀴즈 이벤트가 없음 |
-| `INVALID_ARGUMENT` | 400 | 잘못된 요청 (예: correctCount가 음수) |
+| `INVALID_ARGUMENT` | 400 | 잘못된 요청 (예: correctCount가 음수이거나 총 문항 수 초과) |
 
 ---
 
