@@ -20,7 +20,6 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * 캡슐 뽑기 비즈니스 로직
@@ -62,10 +61,9 @@ public class CapsuleService {
             throw new CapsuleException(ErrorCode.CAPSULE_DRAW_LIMIT_EXCEEDED);
         }
 
-        // 이미 뽑힌 캡슐 ID Set으로 필터링 (O(n) → O(1) lookup)
+        // 이미 뽑힌 캡슐 ID Set으로 필터링 (O(1) lookup)
         List<Capsule> allCapsules = capsuleRepository.findByCapsuleEvent(capsuleEvent);
-        Set<Long> drawnIds = capsuleDrawRepository.findDrawnCapsulesByCapsuleEvent(capsuleEvent)
-                .stream().map(Capsule::getCapsuleId).collect(Collectors.toSet());
+        Set<Long> drawnIds = capsuleDrawRepository.findDrawnCapsuleIdsByCapsuleEvent(capsuleEvent);
         List<Capsule> remaining = allCapsules.stream()
                 .filter(c -> !drawnIds.contains(c.getCapsuleId()))
                 .toList();

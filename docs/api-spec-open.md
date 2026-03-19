@@ -42,7 +42,7 @@ URL 접속 시 갤러리 + 이벤트 콘텐츠를 한 번에 조회합니다.
 
 ### Request
 
-```
+```http
 GET /events/{eventUrl}
 ```
 
@@ -243,7 +243,7 @@ GET /events/{eventUrl}
 
 ### Request
 
-```
+```http
 POST /events/{eventUrl}/capsule/draw
 ```
 
@@ -282,6 +282,7 @@ POST /events/{eventUrl}/capsule/draw
 | 캡슐 이벤트 없음 | `CAPSULE_NOT_FOUND` | 404 |
 
 ### 참고
+
 - 뽑기 후 다시 `GET /events/{eventUrl}`을 호출하면 `remainingDrawCount`가 감소하고, 뽑힌 캡슐은 `list`에서 제거됩니다.
 - 남은 캡슐의 확률(`percent`)은 자동으로 재계산됩니다.
 
@@ -293,7 +294,7 @@ POST /events/{eventUrl}/capsule/draw
 
 ### Request
 
-```
+```http
 POST /events/{eventUrl}/quiz/result
 ```
 
@@ -339,7 +340,7 @@ POST /events/{eventUrl}/quiz/result
 
 ### Request
 
-```
+```http
 DELETE /events/{eventUrl}/progress
 ```
 
@@ -369,7 +370,7 @@ DELETE /events/{eventUrl}/progress
 
 ## 전체 플로우 요약
 
-```
+```text
 1. GET /events/{eventUrl}
    → 갤러리 + 콘텐츠(gacha/quiz/unboxing) 데이터 수신
 

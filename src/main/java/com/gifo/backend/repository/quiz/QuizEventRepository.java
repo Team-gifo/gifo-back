@@ -8,7 +8,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface QuizEventRepository extends JpaRepository<QuizEvent, Long> {
 
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Query("UPDATE QuizEvent q SET q.totalAttempt = q.totalAttempt + 1 WHERE q.quizEventId = :id")
     void incrementTotalAttempt(@Param("id") Long quizEventId);
 }
