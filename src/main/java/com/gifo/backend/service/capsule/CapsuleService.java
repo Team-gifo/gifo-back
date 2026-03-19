@@ -96,7 +96,7 @@ public class CapsuleService {
     private Capsule weightedRandom(List<Capsule> capsules) {
         int totalWeight = capsules.stream().mapToInt(Capsule::getWeight).sum();
         if (totalWeight <= 0) {
-            // 가중치가 모두 0인 경우 균등 확률로 첫 번째 반환 (의도된 fallback)
+            // 가중치가 모두 0인 경우 균등 확률로 임의 캡슐 반환 (의도된 fallback)
             return capsules.get(RANDOM.nextInt(capsules.size()));
         }
         int rand = RANDOM.nextInt(totalWeight);

@@ -33,15 +33,13 @@ public class QuizService {
     private final QuizRewardRuleRepository quizRewardRuleRepository;
 
     public QuizResponse.Result saveResult(String eventUrl, QuizRequest.Result request) {
-        if (request.correctCount() < 0) {
-            throw new QuizException(ErrorCode.INVALID_ARGUMENT);
-        }
-
         BirthdayEvent event = entityFinder.getEventByUrlOrThrow(eventUrl);
 
         QuizEvent quizEvent = event.getQuizEvent();
-        if (quizEvent == null) {
-            throw new QuizException(ErrorCode.QUIZ_NOT_FOUND);
+
+        int totalQuizCount = quizEvent.getQuizzes().size();
+        if (request.correctCount() < 0 || request.correctCount() > totalQuizCount) {
+            throw new QuizException(ErrorCode.INVALID_ARGUMENT);
         }
 
         // 원자적 totalAttempt 증가 (동시성 안전)
