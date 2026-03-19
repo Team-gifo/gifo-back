@@ -29,6 +29,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -129,11 +131,11 @@ public class BirthdayEventService {
     // 이미 뽑힌 캡슐 제외 → 남은 캡슐만 반환 + 남은 뽑기 횟수 계산
     private EventResponse.GachaContent buildGachaContent(CapsuleEvent capsuleEvent) {
         List<Capsule> allCapsules = capsuleRepository.findByCapsuleEvent(capsuleEvent);
-        List<Capsule> drawnCapsules = capsuleDrawRepository.findDrawnCapsulesByCapsuleEvent(capsuleEvent);
-
-        // 이미 뽑힌 캡슐 제외
+        // 이미 뽑힌 캡슐 ID Set으로 필터링 (O(n) → O(1) lookup)
+        Set<Long> drawnIds = capsuleDrawRepository.findDrawnCapsulesByCapsuleEvent(capsuleEvent)
+                .stream().map(Capsule::getCapsuleId).collect(Collectors.toSet());
         List<Capsule> remainingCapsules = allCapsules.stream()
-                .filter(c -> !drawnCapsules.contains(c))
+                .filter(c -> !drawnIds.contains(c.getCapsuleId()))
                 .toList();
 
         int totalWeight = remainingCapsules.stream().mapToInt(Capsule::getWeight).sum();
@@ -194,7 +196,7 @@ public class BirthdayEventService {
     // OX: "O","X" 선택지 + 정답 표시
     // SUBJECTIVE: 빈 선택지 + 정답 텍스트 목록
     private EventResponse.QuizItem buildQuizItem(Quiz quiz) {
-        List<QuizChoice> choices = quizChoiceRepository.findByQuiz(quiz);
+        List<QuizChoice> choices = quiz.getQuizChoices();
 
         List<String> options;
         List<String> answers;

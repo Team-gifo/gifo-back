@@ -11,6 +11,7 @@ import com.gifo.backend.global.exception.capsule.CapsuleException;
 import com.gifo.backend.global.util.EntityFinder;
 import com.gifo.backend.repository.capsule.CapsuleDrawRepository;
 import com.gifo.backend.repository.capsule.CapsuleRepository;
+import com.gifo.backend.repository.event.BirthdayEventRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,16 +19,19 @@ import org.springframework.transaction.annotation.Transactional;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 캡슐 뽑기 비즈니스 로직
  *
  * POST /events/{eventUrl}/capsule/draw 처리:
- * 1. 이벤트 유효성 검증 (ACTIVE 상태인지)
- * 2. 남은 뽑기 횟수 확인 (maxDrawCount 초과 시 예외)
- * 3. 가중치(weight) 기반 랜덤 추첨
- * 4. CapsuleDraw 이력 저장
- * 5. 획득 선물 반환
+ * 1. 비관적 락으로 동시 요청 방지
+ * 2. 이벤트 유효성 검증 (ACTIVE 상태인지)
+ * 3. 남은 뽑기 횟수 확인 (maxDrawCount 초과 시 예외)
+ * 4. 가중치(weight) 기반 랜덤 추첨 (비복원 추출)
+ * 5. CapsuleDraw 이력 저장
+ * 6. 획득 선물 반환
  */
 @Service
 @RequiredArgsConstructor
@@ -35,13 +39,17 @@ import java.util.List;
 public class CapsuleService {
 
     private final EntityFinder entityFinder;
+    private final BirthdayEventRepository birthdayEventRepository;
     private final CapsuleRepository capsuleRepository;
     private final CapsuleDrawRepository capsuleDrawRepository;
 
     private static final SecureRandom RANDOM = new SecureRandom();
 
     public CapsuleResponse.Draw drawCapsule(String eventUrl) {
-        BirthdayEvent event = entityFinder.getEventByUrlOrThrow(eventUrl);
+        // 비관적 락으로 동시 뽑기 요청 방지
+        BirthdayEvent event = birthdayEventRepository.findByEventUrlForUpdate(eventUrl)
+                .orElseThrow(() -> new CapsuleException(ErrorCode.EVENT_NOT_FOUND));
+        entityFinder.validateEventStatus(event);
 
         CapsuleEvent capsuleEvent = event.getCapsuleEvent();
         if (capsuleEvent == null) {
@@ -54,11 +62,12 @@ public class CapsuleService {
             throw new CapsuleException(ErrorCode.CAPSULE_DRAW_LIMIT_EXCEEDED);
         }
 
-        // 이미 뽑힌 캡슐 제외 → 남은 캡슐 풀 구성
+        // 이미 뽑힌 캡슐 ID Set으로 필터링 (O(n) → O(1) lookup)
         List<Capsule> allCapsules = capsuleRepository.findByCapsuleEvent(capsuleEvent);
-        List<Capsule> drawnCapsules = capsuleDrawRepository.findDrawnCapsulesByCapsuleEvent(capsuleEvent);
+        Set<Long> drawnIds = capsuleDrawRepository.findDrawnCapsulesByCapsuleEvent(capsuleEvent)
+                .stream().map(Capsule::getCapsuleId).collect(Collectors.toSet());
         List<Capsule> remaining = allCapsules.stream()
-                .filter(c -> !drawnCapsules.contains(c))
+                .filter(c -> !drawnIds.contains(c.getCapsuleId()))
                 .toList();
 
         if (remaining.isEmpty()) {
@@ -85,16 +94,18 @@ public class CapsuleService {
     /**
      * 가중치 기반 랜덤 추첨 알고리즘
      * totalWeight 범위 안에서 난수 생성 → 누적합으로 당첨 캡슐 결정
-     * 예: [weight=7000, weight=2000, weight=1000] → 70%, 20%, 10%
      */
     private Capsule weightedRandom(List<Capsule> capsules) {
         int totalWeight = capsules.stream().mapToInt(Capsule::getWeight).sum();
+        if (totalWeight <= 0) {
+            return capsules.get(0);
+        }
         int rand = RANDOM.nextInt(totalWeight);
         int cumulative = 0;
         for (Capsule capsule : capsules) {
             cumulative += capsule.getWeight();
             if (rand < cumulative) return capsule;
         }
-        return capsules.get(capsules.size() - 1); // fallback
+        return capsules.get(capsules.size() - 1);
     }
 }

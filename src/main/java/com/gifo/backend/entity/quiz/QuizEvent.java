@@ -29,6 +29,14 @@ public class QuizEvent extends BaseEntity {
     @Column(name = "total_attempt")
     private Integer totalAttempt;
 
+    @Setter
+    @Column(name = "last_correct_count")
+    private Integer lastCorrectCount;
+
+    @Setter
+    @Column(name = "last_success")
+    private Boolean lastSuccess;
+
     @Builder.Default
     @OneToMany(mappedBy = "quizEvent", fetch = FetchType.LAZY)
     private List<Quiz> quizzes = new ArrayList<>();

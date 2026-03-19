@@ -34,13 +34,20 @@ public class EntityFinder {
     public BirthdayEvent getEventByUrlOrThrow(String eventUrl) {
         BirthdayEvent event = birthdayEventRepository.findByEventUrl(eventUrl)
                 .orElseThrow(() -> new EventException(ErrorCode.EVENT_NOT_FOUND));
+        validateEventStatus(event);
+        return event;
+    }
 
+    /**
+     * 이벤트 상태를 검증합니다. EXPIRED/DELETED 상태면 예외를 던집니다.
+     * 비관적 락으로 조회한 이벤트에도 재사용 가능합니다.
+     */
+    public void validateEventStatus(BirthdayEvent event) {
         if (event.getStatus() == EventStatus.EXPIRED) {
             throw new EventException(ErrorCode.EVENT_EXPIRED);
         }
         if (event.getStatus() == EventStatus.DELETED) {
             throw new EventException(ErrorCode.EVENT_DELETED);
         }
-        return event;
     }
 }
