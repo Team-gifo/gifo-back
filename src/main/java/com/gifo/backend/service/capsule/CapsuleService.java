@@ -18,8 +18,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 캡슐 뽑기 비즈니스 로직
@@ -38,13 +40,16 @@ import java.util.Set;
 public class CapsuleService {
 
     private final EntityFinder entityFinder;
-    private final BirthdayEventRepository birthdayEventRepository;
     private final CapsuleRepository capsuleRepository;
     private final CapsuleDrawRepository capsuleDrawRepository;
 
     private static final SecureRandom RANDOM = new SecureRandom();
 
-    public CapsuleResponse.Draw drawCapsule(String eventUrl) {
+    /**
+     * @param requestCount 한 번에 뽑을 횟수
+     * @return 뽑힌 선물 리스트
+     */
+    public List<CapsuleResponse.Draw> drawCapsules(String eventUrl, int requestCount) {
         // 비관적 락으로 동시 뽑기 요청 방지
         BirthdayEvent event = entityFinder.getEventByUrlForUpdateOrThrow(eventUrl);
 
@@ -54,37 +59,50 @@ public class CapsuleService {
         }
 
         // 뽑기 횟수 초과 검증
-        long drawCount = capsuleDrawRepository.countByCapsuleEvent(capsuleEvent);
-        if (drawCount >= capsuleEvent.getMaxDrawCount()) {
+        long currentDrawCount = capsuleDrawRepository.countByCapsuleEvent(capsuleEvent);
+        if (currentDrawCount + requestCount > capsuleEvent.getMaxDrawCount()) {
             throw new CapsuleException(ErrorCode.CAPSULE_DRAW_LIMIT_EXCEEDED);
         }
 
         // 이미 뽑힌 캡슐 ID Set으로 필터링 (O(1) lookup)
         List<Capsule> allCapsules = capsuleRepository.findByCapsuleEvent(capsuleEvent);
         Set<Long> drawnIds = capsuleDrawRepository.findDrawnCapsuleIdsByCapsuleEvent(capsuleEvent);
+
         List<Capsule> remaining = allCapsules.stream()
                 .filter(c -> !drawnIds.contains(c.getCapsuleId()))
-                .toList();
+                .collect(Collectors.toCollection(ArrayList::new));
 
-        if (remaining.isEmpty()) {
+        // 남은 캡슐 수보다 뽑으려는 개수가 많으면 예외 처리
+        if (remaining.size() < requestCount) {
             throw new CapsuleException(ErrorCode.CAPSULE_ALL_DRAWN);
         }
 
-        // 남은 캡슐 중 가중치 기반 랜덤 추첨
-        Capsule drawn = weightedRandom(remaining);
+        List<CapsuleDraw> newDraws = new ArrayList<>();
+        List<CapsuleResponse.Draw> results = new ArrayList<>();
 
-        // 뽑기 이력 저장
-        capsuleDrawRepository.save(CapsuleDraw.builder()
-                .capsuleEvent(capsuleEvent)
-                .capsule(drawn)
-                .createdAt(LocalDateTime.now())
-                .build());
+        for (int i = 0; i < requestCount; i++) {
+            Capsule drawn = weightedRandom(remaining);
 
-        Gift gift = drawn.getGift();
-        return new CapsuleResponse.Draw(
-                gift.getGiftName(),
-                gift.getGiftImageUrl(),
-                gift.getDescription());
+            // 캡슐은 남은 목록에서 즉시 제거하여 중복 당첨 방지
+            remaining.remove(drawn);
+
+            newDraws.add(CapsuleDraw.builder()
+                    .capsuleEvent(capsuleEvent)
+                    .capsule(drawn)
+                    .createdAt(LocalDateTime.now())
+                    .build());
+
+            // 응답 DTO 목록에 추가
+            Gift gift = drawn.getGift();
+            results.add(new CapsuleResponse.Draw(
+                    gift.getGiftName(),
+                    gift.getGiftImageUrl(),
+                    gift.getDescription()));
+        }
+
+        capsuleDrawRepository.saveAll(newDraws);
+
+        return results;
     }
 
     /**

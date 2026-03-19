@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/events")
 @Tag(name = "Capsule API", description = "캡슐 뽑기 관련 API")
@@ -22,12 +24,12 @@ public class CapsuleController {
      * 가중치 기반 랜덤 추첨 → 획득 선물 반환
      * 뽑기 횟수 초과 시 CAPSULE_DRAW_LIMIT_EXCEEDED 예외
      */
-    @PostMapping("/{eventUrl}/capsule/draw")
+    @PostMapping("/{eventUrl}/capsules/draw")
     @Operation(summary = "캡슐 뽑기", description = "이벤트 URL로 캡슐을 한 번 뽑습니다.")
-    public ResponseEntity<ApiResponse<CapsuleResponse.Draw>> draw(
-            @PathVariable String eventUrl) {
+    public ResponseEntity<ApiResponse<List<CapsuleResponse.Draw>>> draw(
+            @PathVariable String eventUrl, @RequestParam Integer requestCount) {
 
-        CapsuleResponse.Draw response = capsuleService.drawCapsule(eventUrl);
+        List<CapsuleResponse.Draw> response = capsuleService.drawCapsules(eventUrl, requestCount);
         return ResponseEntity.ok(ApiResponse.success("뽑기 성공", response));
     }
 }
