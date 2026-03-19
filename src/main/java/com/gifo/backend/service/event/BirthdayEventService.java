@@ -73,8 +73,8 @@ public class BirthdayEventService {
         saveGallery(event, req.getGallery());
 
         if (req.getContent() != null) {
-            if (req.getContent().getGacha() != null)    saveGacha(event, req.getContent().getGacha());
-            if (req.getContent().getQuiz() != null)     saveQuiz(event, req.getContent().getQuiz());
+            if (req.getContent().getGacha() != null) saveGacha(event, req.getContent().getGacha());
+            if (req.getContent().getQuiz() != null) saveQuiz(event, req.getContent().getQuiz());
             if (req.getContent().getUnboxing() != null) saveUnboxing(event, req.getContent().getUnboxing());
         }
 
@@ -232,8 +232,8 @@ public class BirthdayEventService {
     // DB 타입 → 프론트 타입 역매핑
     private String reverseMapQuizType(QuizType quizType) {
         return switch (quizType) {
-            case OBJECTIVE  -> "multiple_choice";
-            case OX         -> "ox";
+            case OBJECTIVE -> "multiple_choice";
+            case OX -> "ox";
             case SUBJECTIVE -> "text";
         };
     }
@@ -261,14 +261,17 @@ public class BirthdayEventService {
     // ══════════════════════════════════════════════
 
     public void resetProgress(String eventUrl) {
-        BirthdayEvent event = entityFinder.getEventByUrlOrThrow(eventUrl);
+        BirthdayEvent event = birthdayEventRepository.findByEventUrlForUpdate(eventUrl)
+                .orElseThrow(() -> new EventException(ErrorCode.EVENT_NOT_FOUND));
+        entityFinder.validateEventStatus(event);
 
         if (event.getCapsuleEvent() != null) {
             capsuleDrawRepository.deleteByCapsuleEvent(event.getCapsuleEvent());
-        }
-
-        if (event.getQuizEvent() != null) {
+        } else if (event.getQuizEvent() != null) {
             event.getQuizEvent().setTotalAttempt(0);
+            event.getQuizEvent().setLastCorrectCount(null);
+            event.getQuizEvent().setLastSuccess(null);
+        } else if (event.getDirectEvent() != null) {
         }
     }
 
@@ -424,8 +427,8 @@ public class BirthdayEventService {
     private QuizType mapQuizType(String type) {
         return switch (type) {
             case "multiple_choice" -> QuizType.OBJECTIVE;
-            case "ox"              -> QuizType.OX;
-            default                -> QuizType.SUBJECTIVE;
+            case "ox" -> QuizType.OX;
+            default -> QuizType.SUBJECTIVE;
         };
     }
 
