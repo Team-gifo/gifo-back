@@ -46,7 +46,6 @@ public class BirthdayEventService {
     private final QuizRepository quizRepository;
     private final QuizChoiceRepository quizChoiceRepository;
     private final QuizRewardRuleRepository quizRewardRuleRepository;
-    private final QuizAttemptRepository quizAttemptRepository;
     private final EntityFinder entityFinder;
 
     private static final String CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -257,7 +256,7 @@ public class BirthdayEventService {
     // 진행 데이터 초기화 (DELETE /events/{eventUrl}/progress)
     // - 재접속 시 "다시 시작하겠습니까?" → 기존 뽑기/퀴즈 이력 삭제
     // - 캡슐: capsule_draw 전체 삭제
-    // - 퀴즈: quiz_attempt 전체 삭제 + totalAttempt 초기화
+    // - 퀴즈: totalAttempt 초기화 (채점은 프론트에서 처리)
     // - 언박싱: 서버 측 초기화 데이터 없음
     // ══════════════════════════════════════════════
 
@@ -269,7 +268,6 @@ public class BirthdayEventService {
         }
 
         if (event.getQuizEvent() != null) {
-            quizAttemptRepository.deleteByQuizEvent(event.getQuizEvent());
             event.getQuizEvent().setTotalAttempt(0);
         }
     }

@@ -6,13 +6,11 @@ package com.gifo.backend.dto.quiz;
 public class QuizResponse {
 
     /**
-     * POST /events/{eventUrl}/quiz/submit 응답
-     * 채점 결과 + 획득 선물 반환
+     * POST /events/{eventUrl}/quiz/result 응답
+     * 저장된 정답 수 + 성공 여부 반환
      */
-    public record Submit(
-            int correctCount,       // 맞춘 문항 수
-            int totalCount,         // 전체 문항 수
-            String giftName,        // 획득 선물 이름
-            String giftImageUrl     // 획득 선물 이미지
+    public record Result(
+            int correctCount,
+            boolean success
     ) {}
 }
