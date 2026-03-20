@@ -50,8 +50,10 @@ public class EntityFinder {
      * 안전하게 데이터를 획득하고 변경할 때 사용합니다.
      */
     public BirthdayEvent getEventByUrlForUpdateOrThrow(String eventUrl) {
-        return birthdayEventRepository.findByEventUrlForUpdate(eventUrl)
+        BirthdayEvent event = birthdayEventRepository.findByEventUrlForUpdate(eventUrl)
                 .orElseThrow(() -> new EventException(ErrorCode.EVENT_NOT_FOUND));
+        validateEventStatus(event);
+        return event;
     }
 
     /**

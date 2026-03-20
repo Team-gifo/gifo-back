@@ -49,7 +49,20 @@ public class EventResponse {
     public record GachaContent(
             int playCount,
             int remainingDrawCount,
-            List<GachaItem> list
+            boolean selected,
+            List<GachaItem> list,
+            List<DrawHistoryItem> drawHistory
+    ) {}
+
+    /**
+     * 뽑기 이력 아이템 (재접속 시 히스토리 복원용)
+     */
+    public record DrawHistoryItem(
+            Long capsuleId,
+            String giftName,
+            String giftImageUrl,
+            String description,
+            boolean selected
     ) {}
 
     /**
