@@ -37,6 +37,9 @@ public enum ErrorCode {
 
     // 퀴즈 도메인
     QUIZ_NOT_FOUND(HttpStatus.NOT_FOUND, "퀴즈 이벤트를 찾을 수 없습니다."),
+    QUIZ_ALREADY_ANSWERED(HttpStatus.BAD_REQUEST, "이미 답변한 문제입니다."),
+    QUIZ_ALL_ANSWERED(HttpStatus.BAD_REQUEST, "모든 문제를 이미 풀었습니다."),
+    QUIZ_QUESTION_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 퀴즈 문제를 찾을 수 없습니다."),
 
     // 외부 API 오류
     NAVER_API_ERROR(HttpStatus.BAD_GATEWAY, "네이버 쇼핑 API 호출에 실패했습니다.");

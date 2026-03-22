@@ -34,7 +34,10 @@
 | `CAPSULE_DRAW_NOT_FOUND` | 404 | 해당 캡슐 뽑기 이력을 찾을 수 없음 |
 | `CAPSULE_ALREADY_SELECTED` | 400 | 이미 캡슐을 선택함 |
 | `QUIZ_NOT_FOUND` | 404 | 퀴즈 이벤트가 없음 |
-| `INVALID_ARGUMENT` | 400 | 잘못된 요청 (예: correctCount가 음수이거나 총 문항 수 초과) |
+| `QUIZ_ALREADY_ANSWERED` | 400 | 이미 답변한 문제 |
+| `QUIZ_ALL_ANSWERED` | 400 | 모든 문제를 이미 풀었음 |
+| `QUIZ_QUESTION_NOT_FOUND` | 404 | 해당 퀴즈 문제를 찾을 수 없음 |
+| `INVALID_ARGUMENT` | 400 | 잘못된 요청 |
 
 ---
 
@@ -157,6 +160,8 @@ GET /events/{eventUrl}
 {
   "gacha": null,
   "quiz": {
+    "currentQuizIndex": 2,
+    "remainingAttempts": null,
     "successReward": {
       "requiredCount": 2,
       "itemName": "에어팟 프로",
@@ -201,6 +206,10 @@ GET /events/{eventUrl}
         "answer": ["스타벅스", "스벅"],
         "playLimit": 3
       }
+    ],
+    "answerHistory": [
+      { "quizId": 1, "correct": true },
+      { "quizId": 2, "correct": false }
     ]
   },
   "unboxing": null
@@ -209,6 +218,8 @@ GET /events/{eventUrl}
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
+| `currentQuizIndex` | int | 현재 풀어야 할 문제 인덱스 (list 기준, 0부터 시작) |
+| `remainingAttempts` | Integer | 현재 문제의 남은 시도 횟수 (`null`이면 아직 해당 문제 시작 안 함, 재접속 시 이어하기용) |
 | `successReward` | Object | 성공 보상 선물 |
 | `successReward.requiredCount` | Integer | 성공에 필요한 최소 정답 수 |
 | `failReward` | Object | 실패 보상 선물 |
@@ -223,13 +234,17 @@ GET /events/{eventUrl}
 | `list[].options` | Array\<String\> | 선택지 목록 (`text` 타입은 빈 배열) |
 | `list[].answer` | Array\<String\> | 정답 목록 (주관식은 허용 답안 여러 개 가능) |
 | `list[].playLimit` | int | 문항별 시도 제한 횟수 |
+| `answerHistory` | Array | 이미 푼 문제의 정답/오답 기록 (재접속 시 복원용) |
+| `answerHistory[].quizId` | Long | 문제 PK |
+| `answerHistory[].correct` | boolean | 정답 여부 |
 
 **퀴즈 채점 플로우 (프론트에서 처리):**
-1. 문항을 1개씩 표시, `playLimit`만큼 재시도 가능
-2. `answer` 배열과 대소문자 무시 비교로 정답 판별
-3. 정답 → `correctCount++`, 다음 문항으로
-4. 오답 → 남은 기회 차감, 0이면 다음 문항으로 (오답 처리)
-5. 모든 문항 완료 → `correctCount >= successReward.requiredCount`이면 성공 보상, 아니면 실패 보상
+1. `currentQuizIndex`에 해당하는 문제를 표시
+2. `remainingAttempts`가 있으면 해당 횟수부터 이어서 시도, `null`이면 `playLimit`부터 시작
+3. `answer` 배열과 대소문자 무시 비교로 정답 판별
+4. 정답 → `POST /quiz/answer { quizId, correct: true, remainingAttempts: 0 }` → 다음 문항으로
+5. 오답 → 남은 기회 차감, 0이면 `POST /quiz/answer { quizId, correct: false, remainingAttempts: 0 }` → 다음 문항으로
+6. 모든 문항 완료 → `POST /quiz/result` → 서버가 정답 수 계산하여 성공/실패 보상 반환
 
 ---
 
@@ -321,7 +336,7 @@ POST /events/{eventUrl}/capsules/draw
 
 ## 3. 캡슐 선택
 
-뽑힌 캡슐 중 1개를 최종 선물로 선택합니다. 뽑기 횟수를 모두 소진한 후 또는 원하는 선물이 나왔을 때 1번만 가능합니다.
+뽑힌 캡슐 중 1개를 최종 선물로 선택합니다. 언제든 다른 뽑힌 선물로 변경 가능합니다.
 
 ### Request
 
@@ -369,15 +384,82 @@ POST /events/{eventUrl}/capsules/select
 
 | 상황 | 에러 코드 | HTTP |
 |------|----------|------|
-| 이미 선택 완료 | `CAPSULE_ALREADY_SELECTED` | 400 |
 | 뽑기 이력 없음 | `CAPSULE_DRAW_NOT_FOUND` | 404 |
 | 캡슐 이벤트 없음 | `CAPSULE_NOT_FOUND` | 404 |
 
+> 현재 단계에서는 프론트 미연동. 이후 선택 기능 필요 시 사용.
+
 ---
 
-## 4. 퀴즈 결과 저장
+## 4. 퀴즈 문제별 결과 저장
 
-프론트에서 채점 완료 후 최종 정답 수를 서버에 저장합니다.
+문제 1개의 풀이 결과(정답/오답)를 저장합니다. 정답을 맞추거나 playLimit을 소진했을 때 호출합니다.
+
+### Request
+
+```http
+POST /events/{eventUrl}/quiz/answer
+```
+
+| 파라미터 | 위치 | 타입 | 설명 |
+|---------|------|------|------|
+| `eventUrl` | path | String | 이벤트 고유 URL |
+
+**Body:**
+
+```json
+{
+  "quizId": 1,
+  "correct": true,
+  "remainingAttempts": 0
+}
+```
+
+| 필드 | 타입 | 필수 | 설명 |
+|------|------|------|------|
+| `quizId` | Long | O | 문제 PK |
+| `correct` | boolean | O | 정답 여부 |
+| `remainingAttempts` | int | O | 현재 문제의 남은 시도 횟수 (재접속 시 이어하기용, 완료 시 0) |
+
+### Response (200 OK)
+
+```json
+{
+  "code": "SUCCESS",
+  "message": "문제 결과 저장 성공",
+  "data": {
+    "quizId": 1,
+    "correct": true,
+    "currentQuizIndex": 1
+  }
+}
+```
+
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| `quizId` | Long | 저장된 문제 PK |
+| `correct` | boolean | 정답 여부 |
+| `currentQuizIndex` | int | 다음에 풀어야 할 문제 인덱스 |
+
+### 에러 케이스
+
+| 상황 | 에러 코드 | HTTP |
+|------|----------|------|
+| 이미 답변한 문제 | `QUIZ_ALREADY_ANSWERED` | 400 |
+| 퀴즈 이벤트 없음 | `QUIZ_NOT_FOUND` | 404 |
+| 문제가 없음 | `QUIZ_QUESTION_NOT_FOUND` | 404 |
+
+### 참고
+
+- 프론트에서 채점 후 정답/오답 결과만 서버에 전송합니다.
+- 재접속 시 `GET /events/{eventUrl}`의 `answerHistory`로 풀이 기록이 복원됩니다.
+- `remainingAttempts`는 문제 풀다가 중간에 나갔을 때 이어하기용으로 저장됩니다.
+
+---
+
+## 5. 퀴즈 최종 결과 저장
+
+모든 문제를 풀고 나서 최종 보상을 판정합니다. 서버가 DB에서 정답 수를 직접 계산합니다.
 
 ### Request
 
@@ -399,7 +481,7 @@ POST /events/{eventUrl}/quiz/result
 
 | 필드 | 타입 | 필수 | 설명 |
 |------|------|------|------|
-| `correctCount` | int | O | 프론트에서 채점한 최종 정답 수 |
+| `correctCount` | int | O | 프론트에서 채점한 정답 수 (서버 검증용 참고값, 실제 판정은 서버 DB 기준) |
 
 ### Response (200 OK)
 
@@ -416,14 +498,14 @@ POST /events/{eventUrl}/quiz/result
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
-| `correctCount` | int | 저장된 정답 수 |
+| `correctCount` | int | 서버가 계산한 정답 수 |
 | `success` | boolean | 성공 여부 (`correctCount >= requiredCount`) |
 
 ---
 
-## 5. 진행 데이터 리셋
+## 6. 진행 데이터 리셋
 
-중간에 이탈했다가 재접속 시 "다시 시작하겠습니까?" → 기존 진행 데이터를 초기화합니다.
+재접속 시 "처음부터 다시 하기" 선택 시 기존 진행 데이터를 초기화합니다.
 
 ### Request
 
@@ -450,7 +532,7 @@ DELETE /events/{eventUrl}/progress
 | 이벤트 타입 | 초기화 내용 |
 |------------|-----------|
 | 캡슐 뽑기 | `capsule_draw` 기록 전체 삭제 (선택 포함) → 뽑기 횟수/캡슐 풀 복원 |
-| 퀴즈 | `totalAttempt` 0으로 초기화, `lastCorrectCount`, `lastSuccess`도 함께 초기화 |
+| 퀴즈 | `quiz_answer` 전체 삭제 + `totalAttempt`, `lastCorrectCount`, `lastSuccess`, `currentQuizRemainingAttempts` 초기화 |
 | 언박싱 | 서버 측 초기화 대상 없음 |
 
 ---
@@ -460,24 +542,25 @@ DELETE /events/{eventUrl}/progress
 ```text
 1. GET /events/{eventUrl}
    → 갤러리 + 콘텐츠(gacha/quiz/unboxing) 데이터 수신
-   → 캡슐인 경우 drawHistory로 이전 뽑기 이력 복원
+   → 캡슐: drawHistory로 이전 뽑기 이력 복원
+   → 퀴즈: answerHistory + currentQuizIndex + remainingAttempts로 풀이 이력 복원
 
 2-A. 캡슐 뽑기 플로우
    → POST /events/{eventUrl}/capsules/draw (1회 뽑기)
-   → 결과를 프론트 로컬 히스토리에 push하여 화면 표시
-   → 원하는 선물이 나왔거나 횟수 소진 시
-   → POST /events/{eventUrl}/capsules/select (최종 선택)
-   → 선택한 선물 정보 표시
+   → 결과를 프론트 로컬 히스토리에 push, 오른쪽에 "~~를 뽑았습니다" 표시
+   → 남은 횟수만큼 반복 또는 원하는 선물이 나오면 중단
+   → (이후 단계) POST /events/{eventUrl}/capsules/select로 최종 선물 선택
 
 2-B. 퀴즈 플로우
    → 프론트에서 문항별 채점 (answer 비교, playLimit 재시도)
+   → 정답 또는 playLimit 소진 시 POST /events/{eventUrl}/quiz/answer
    → 모든 문항 완료 후 POST /events/{eventUrl}/quiz/result
-   → correctCount >= requiredCount → 성공 보상 / 아니면 실패 보상
+   → 서버가 정답 수 계산 → 성공/실패 보상 반환
 
 2-C. 언박싱 플로우
    → "선물 받기" 버튼 → afterOpen 데이터로 UI 전환 (서버 호출 없음)
 
 3. 중간 이탈 후 재접속
-   → GET /events/{eventUrl}로 drawHistory 복원
+   → GET /events/{eventUrl}로 진행 이력 복원 → 이어서 진행
    → DELETE /events/{eventUrl}/progress → 처음부터 다시 시작
 ```

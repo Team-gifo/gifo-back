@@ -19,11 +19,28 @@ public class QuizController {
     private final QuizService quizService;
 
     /**
+     * POST /events/{eventUrl}/quiz/answer - 문제별 결과 저장
+     * 정답을 맞추거나 playLimit 소진 시 호출
+     */
+    @PostMapping("/{eventUrl}/quiz/answer")
+    @Operation(summary = "퀴즈 문제별 결과 저장", description = "문제 1개의 풀이 결과(정답/오답)를 저장합니다.")
+    public ResponseEntity<ApiResponse<QuizResponse.Answer>> saveAnswer(
+            @PathVariable String eventUrl,
+            @RequestBody QuizRequest.Answer request) {
+
+        // 남은 시도 횟수 업데이트 (재접속 시 이어하기용)
+        quizService.updateRemainingAttempts(eventUrl, request.remainingAttempts());
+
+        QuizResponse.Answer response = quizService.saveAnswer(eventUrl, request);
+        return ResponseEntity.ok(ApiResponse.success("문제 결과 저장 성공", response));
+    }
+
+    /**
      * POST /events/{eventUrl}/quiz/result - 퀴즈 최종 결과 저장
-     * 프론트에서 채점 완료 후 정답 수만 전송하여 저장
+     * 모든 문제 완료 후 서버가 DB에서 정답 수를 계산하여 보상 판정
      */
     @PostMapping("/{eventUrl}/quiz/result")
-    @Operation(summary = "퀴즈 결과 저장", description = "프론트에서 채점한 최종 정답 수를 저장합니다.")
+    @Operation(summary = "퀴즈 결과 저장", description = "모든 문제 완료 후 최종 보상을 판정합니다.")
     public ResponseEntity<ApiResponse<QuizResponse.Result>> saveResult(
             @PathVariable String eventUrl,
             @RequestBody QuizRequest.Result request) {

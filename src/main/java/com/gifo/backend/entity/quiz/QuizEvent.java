@@ -37,6 +37,15 @@ public class QuizEvent extends BaseEntity {
     @Column(name = "last_success")
     private Boolean lastSuccess;
 
+    /**
+     * 현재 풀고 있는 문제의 남은 시도 횟수
+     * 문제를 풀다가 중간에 나갔을 때 이어하기용
+     * null이면 아직 해당 문제를 시작하지 않은 상태
+     */
+    @Setter
+    @Column(name = "current_quiz_remaining_attempts")
+    private Integer currentQuizRemainingAttempts;
+
     @Builder.Default
     @OneToMany(mappedBy = "quizEvent", fetch = FetchType.LAZY)
     private List<Quiz> quizzes = new ArrayList<>();

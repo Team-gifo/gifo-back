@@ -48,6 +48,7 @@ public class BirthdayEventService {
     private final QuizRepository quizRepository;
     private final QuizChoiceRepository quizChoiceRepository;
     private final QuizRewardRuleRepository quizRewardRuleRepository;
+    private final QuizAnswerRepository quizAnswerRepository;
     private final EntityFinder entityFinder;
 
     private static final String CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -201,7 +202,20 @@ public class BirthdayEventService {
                         .map(this::buildQuizItem)
                         .toList();
 
-        return new EventResponse.QuizContent(successReward, failReward, quizItems);
+        // 퀴즈 풀이 이력 (재접속 시 복원용)
+        List<QuizAnswer> answers = quizAnswerRepository.findByQuizEventOrderByQuizAnswerIdAsc(quizEvent);
+        int currentQuizIndex = answers.size();
+        Integer remainingAttempts = quizEvent.getCurrentQuizRemainingAttempts();
+
+        List<EventResponse.AnswerHistoryItem> answerHistory = answers.stream()
+                .map(a -> new EventResponse.AnswerHistoryItem(
+                        a.getQuiz().getQuizId(),
+                        a.getCorrect()))
+                .toList();
+
+        return new EventResponse.QuizContent(
+                currentQuizIndex, remainingAttempts,
+                successReward, failReward, quizItems, answerHistory);
     }
 
     // 퀴즈 문항 빌드: 타입별 선택지 + 정답 구성
@@ -271,7 +285,7 @@ public class BirthdayEventService {
     // 진행 데이터 초기화 (DELETE /events/{eventUrl}/progress)
     // - 재접속 시 "다시 시작하겠습니까?" → 기존 뽑기/퀴즈 이력 삭제
     // - 캡슐: capsule_draw 전체 삭제
-    // - 퀴즈: totalAttempt 초기화 (채점은 프론트에서 처리)
+    // - 퀴즈: quiz_answer 전체 삭제 + totalAttempt/remainingAttempts 초기화
     // - 언박싱: 서버 측 초기화 데이터 없음
     // ══════════════════════════════════════════════
 
@@ -281,9 +295,12 @@ public class BirthdayEventService {
         if (event.getCapsuleEvent() != null) {
             capsuleDrawRepository.deleteByCapsuleEvent(event.getCapsuleEvent());
         } else if (event.getQuizEvent() != null) {
-            event.getQuizEvent().setTotalAttempt(0);
-            event.getQuizEvent().setLastCorrectCount(null);
-            event.getQuizEvent().setLastSuccess(null);
+            QuizEvent quizEvent = event.getQuizEvent();
+            quizAnswerRepository.deleteByQuizEvent(quizEvent);
+            quizEvent.setTotalAttempt(0);
+            quizEvent.setLastCorrectCount(null);
+            quizEvent.setLastSuccess(null);
+            quizEvent.setCurrentQuizRemainingAttempts(null);
         } else if (event.getDirectEvent() != null) {
         }
     }

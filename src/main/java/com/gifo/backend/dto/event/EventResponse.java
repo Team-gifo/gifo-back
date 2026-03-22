@@ -85,9 +85,22 @@ public class EventResponse {
      * failReward: 그 미만일 때 받는 선물
      */
     public record QuizContent(
+            int currentQuizIndex,
+            Integer remainingAttempts,
             RewardItem successReward,
             RewardItem failReward,
-            List<QuizItem> list
+            List<QuizItem> list,
+            List<AnswerHistoryItem> answerHistory
+    ) {}
+
+    /**
+     * 퀴즈 풀이 이력 아이템 (재접속 시 복원용)
+     * quizId: 문제 PK
+     * correct: 정답 여부
+     */
+    public record AnswerHistoryItem(
+            Long quizId,
+            boolean correct
     ) {}
 
     /**

@@ -13,4 +13,14 @@ public class QuizResponse {
             int correctCount,
             boolean success
     ) {}
+
+    /**
+     * POST /events/{eventUrl}/quiz/answer 응답
+     * 문제별 결과 저장 확인 + 다음 문제 인덱스
+     */
+    public record Answer(
+            Long quizId,
+            boolean correct,
+            int currentQuizIndex
+    ) {}
 }
