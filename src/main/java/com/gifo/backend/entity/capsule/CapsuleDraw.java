@@ -32,4 +32,8 @@ public class CapsuleDraw extends BaseEntity {
     public void select() {
         this.selected = true;
     }
+
+    public void unselect() {
+        this.selected = false;
+    }
 }

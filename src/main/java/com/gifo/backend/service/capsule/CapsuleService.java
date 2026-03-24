@@ -92,8 +92,8 @@ public class CapsuleService {
     }
 
     /**
-     * 뽑힌 캡슐 중 최종 1개 선택
-     * 해당 CapsuleDraw를 selected=true로 업데이트
+     * 뽑힌 캡슐 중 1개 선택 (변경 가능)
+     * 기존 선택이 있으면 해제 후 새로 선택
      */
     public CapsuleResponse.Select selectCapsule(String eventUrl, Long capsuleId) {
         BirthdayEvent event = entityFinder.getEventByUrlForUpdateOrThrow(eventUrl);
@@ -103,14 +103,13 @@ public class CapsuleService {
             throw new CapsuleException(ErrorCode.CAPSULE_NOT_FOUND);
         }
 
-        // 이미 선택 완료된 경우
-        if (capsuleDrawRepository.existsByCapsuleEventAndSelectedTrue(capsuleEvent)) {
-            throw new CapsuleException(ErrorCode.CAPSULE_ALREADY_SELECTED);
-        }
+        // 기존 선택이 있으면 해제 (재선택 허용)
+        capsuleDrawRepository.findByCapsuleEventAndSelectedTrue(capsuleEvent)
+                .ifPresent(CapsuleDraw::unselect);
 
-        // 뽑기 이력에서 해당 캡슐 찾기
+        // 뽑기 이력에서 해당 캡슐 찾기 (fetch join으로 N+1 방지)
         CapsuleDraw draw = capsuleDrawRepository
-                .findByCapsuleEventAndCapsule_CapsuleId(capsuleEvent, capsuleId)
+                .findByCapsuleEventAndCapsuleWithGift(capsuleEvent, capsuleId)
                 .orElseThrow(() -> new CapsuleException(ErrorCode.CAPSULE_DRAW_NOT_FOUND));
 
         draw.select();

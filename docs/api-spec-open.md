@@ -336,7 +336,7 @@ POST /events/{eventUrl}/capsules/draw
 
 ## 3. 캡슐 선택
 
-뽑힌 캡슐 중 1개를 최종 선물로 선택합니다. 언제든 다른 뽑힌 선물로 변경 가능합니다.
+뽑힌 캡슐 중 1개를 최종 선물로 선택합니다. 선택 후에도 다른 뽑힌 선물로 언제든 변경할 수 있습니다.
 
 ### Request
 
@@ -386,8 +386,7 @@ POST /events/{eventUrl}/capsules/select
 |------|----------|------|
 | 뽑기 이력 없음 | `CAPSULE_DRAW_NOT_FOUND` | 404 |
 | 캡슐 이벤트 없음 | `CAPSULE_NOT_FOUND` | 404 |
-
-> 현재 단계에서는 프론트 미연동. 이후 선택 기능 필요 시 사용.
+| capsuleId 누락 | `VALIDATION_ERROR` | 400 |
 
 ---
 

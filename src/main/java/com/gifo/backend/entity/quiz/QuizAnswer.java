@@ -11,7 +11,13 @@ import lombok.experimental.SuperBuilder;
  * 재접속 시 answerHistory 복원용
  */
 @Entity
-@Table(name = "quiz_answer")
+@Table(
+        name = "quiz_answer",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_quiz_answer_event_quiz",
+                columnNames = {"quiz_event_id", "quiz_id"}
+        )
+)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SuperBuilder

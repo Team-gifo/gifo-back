@@ -1,5 +1,7 @@
 package com.gifo.backend.dto.capsule;
 
+import jakarta.validation.constraints.NotNull;
+
 /**
  * 캡슐 도메인 요청 DTO
  */
@@ -10,6 +12,7 @@ public class CapsuleRequest {
      * 뽑힌 캡슐 중 최종 선택
      */
     public record Select(
+            @NotNull(message = "capsuleId는 필수입니다.")
             Long capsuleId
     ) {}
 }

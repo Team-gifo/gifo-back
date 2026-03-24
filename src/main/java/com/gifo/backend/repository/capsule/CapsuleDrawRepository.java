@@ -20,7 +20,13 @@ public interface CapsuleDrawRepository extends JpaRepository<CapsuleDraw, Long> 
     @Query("SELECT d FROM CapsuleDraw d JOIN FETCH d.capsule c JOIN FETCH c.gift WHERE d.capsuleEvent = :capsuleEvent ORDER BY d.drawId ASC")
     List<CapsuleDraw> findByCapsuleEventWithGift(@Param("capsuleEvent") CapsuleEvent capsuleEvent);
 
-    Optional<CapsuleDraw> findByCapsuleEventAndCapsule_CapsuleId(CapsuleEvent capsuleEvent, Long capsuleId);
+    @Query("SELECT d FROM CapsuleDraw d JOIN FETCH d.capsule c JOIN FETCH c.gift " +
+            "WHERE d.capsuleEvent = :capsuleEvent AND d.capsule.capsuleId = :capsuleId")
+    Optional<CapsuleDraw> findByCapsuleEventAndCapsuleWithGift(
+            @Param("capsuleEvent") CapsuleEvent capsuleEvent,
+            @Param("capsuleId") Long capsuleId);
+
+    Optional<CapsuleDraw> findByCapsuleEventAndSelectedTrue(CapsuleEvent capsuleEvent);
 
     boolean existsByCapsuleEventAndSelectedTrue(CapsuleEvent capsuleEvent);
 

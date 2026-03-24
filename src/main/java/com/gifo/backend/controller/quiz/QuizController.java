@@ -6,6 +6,7 @@ import com.gifo.backend.global.ApiResponse;
 import com.gifo.backend.service.quiz.QuizService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,7 +27,7 @@ public class QuizController {
     @Operation(summary = "퀴즈 문제별 결과 저장", description = "문제 1개의 풀이 결과(정답/오답)를 저장합니다.")
     public ResponseEntity<ApiResponse<QuizResponse.Answer>> saveAnswer(
             @PathVariable String eventUrl,
-            @RequestBody QuizRequest.Answer request) {
+            @Valid @RequestBody QuizRequest.Answer request) {
 
         // 남은 시도 횟수 업데이트 (재접속 시 이어하기용)
         quizService.updateRemainingAttempts(eventUrl, request.remainingAttempts());

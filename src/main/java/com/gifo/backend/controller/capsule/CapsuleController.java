@@ -6,6 +6,7 @@ import com.gifo.backend.global.ApiResponse;
 import com.gifo.backend.service.capsule.CapsuleService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -39,7 +40,7 @@ public class CapsuleController {
     @Operation(summary = "캡슐 선택", description = "뽑힌 캡슐 중 1개를 최종 선물로 선택합니다.")
     public ResponseEntity<ApiResponse<CapsuleResponse.Select>> select(
             @PathVariable String eventUrl,
-            @RequestBody CapsuleRequest.Select request) {
+            @Valid @RequestBody CapsuleRequest.Select request) {
 
         CapsuleResponse.Select response = capsuleService.selectCapsule(eventUrl, request.capsuleId());
         return ResponseEntity.ok(ApiResponse.success("선물 선택 성공", response));

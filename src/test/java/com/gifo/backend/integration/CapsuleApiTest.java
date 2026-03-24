@@ -1,5 +1,7 @@
 package com.gifo.backend.integration;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gifo.backend.entity.capsule.Capsule;
 import com.gifo.backend.entity.capsule.CapsuleEvent;
 import com.gifo.backend.entity.event.BirthdayEvent;
@@ -45,6 +47,7 @@ class CapsuleApiTest {
     @Autowired
     GiftRepository giftRepository;
 
+    private final ObjectMapper objectMapper = new ObjectMapper();
     private String eventUrl;
 
     @BeforeEach
@@ -157,8 +160,9 @@ class CapsuleApiTest {
         String drawResult = mockMvc.perform(post("/events/{eventUrl}/capsules/draw", eventUrl))
                 .andReturn().getResponse().getContentAsString();
 
-        // capsuleId 추출 (JSON 파싱)
-        String capsuleId = drawResult.split("\"capsuleId\":")[1].split(",")[0].trim();
+        // capsuleId 추출 (ObjectMapper 사용)
+        JsonNode drawJson = objectMapper.readTree(drawResult);
+        Long capsuleId = drawJson.path("data").path("capsuleId").asLong();
 
         // 선택
         mockMvc.perform(post("/events/{eventUrl}/capsules/select", eventUrl)
@@ -175,6 +179,37 @@ class CapsuleApiTest {
         mockMvc.perform(get("/events/{eventUrl}", eventUrl))
                 .andExpect(jsonPath("$.data.content.gacha.selected").value(true))
                 .andExpect(jsonPath("$.data.content.gacha.drawHistory[0].selected").value(true));
+    }
+
+    @Test
+    @DisplayName("5-1. POST /capsules/select - 선택 변경 (재선택)")
+    void reselectCapsule() throws Exception {
+        // 2번 뽑기
+        String draw1 = mockMvc.perform(post("/events/{eventUrl}/capsules/draw", eventUrl))
+                .andReturn().getResponse().getContentAsString();
+        String draw2 = mockMvc.perform(post("/events/{eventUrl}/capsules/draw", eventUrl))
+                .andReturn().getResponse().getContentAsString();
+
+        Long capsuleId1 = objectMapper.readTree(draw1).path("data").path("capsuleId").asLong();
+        Long capsuleId2 = objectMapper.readTree(draw2).path("data").path("capsuleId").asLong();
+
+        // 첫 번째 선택
+        mockMvc.perform(post("/events/{eventUrl}/capsules/select", eventUrl)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"capsuleId\":" + capsuleId1 + "}"))
+                .andExpect(status().isOk());
+
+        // 두 번째 선택 (변경) — 에러 없이 성공해야 함
+        mockMvc.perform(post("/events/{eventUrl}/capsules/select", eventUrl)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"capsuleId\":" + capsuleId2 + "}"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("SUCCESS"));
+
+        // 조회 - 두 번째 캡슐만 selected=true
+        mockMvc.perform(get("/events/{eventUrl}", eventUrl))
+                .andExpect(jsonPath("$.data.content.gacha.selected").value(true));
     }
 
     @Test

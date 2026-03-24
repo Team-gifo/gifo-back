@@ -1,5 +1,6 @@
 package com.gifo.backend.integration;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gifo.backend.entity.capsule.Capsule;
 import com.gifo.backend.entity.capsule.CapsuleEvent;
 import com.gifo.backend.entity.event.BirthdayEvent;
@@ -42,6 +43,8 @@ class ResumeFlowTest {
     MockMvc mockMvc;
     @Autowired
     EntityManager em;
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
     @Autowired
     BirthdayEventRepository birthdayEventRepository;
     @Autowired
@@ -125,7 +128,7 @@ class ResumeFlowTest {
         // 1번 뽑기 + 선택
         String drawResult = mockMvc.perform(post("/events/RESUME02/capsules/draw"))
                 .andReturn().getResponse().getContentAsString();
-        String capsuleId = drawResult.split("\"capsuleId\":")[1].split(",")[0].trim();
+        Long capsuleId = objectMapper.readTree(drawResult).path("data").path("capsuleId").asLong();
 
         mockMvc.perform(post("/events/RESUME02/capsules/select")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -294,7 +297,7 @@ class ResumeFlowTest {
     }
 
     @Test
-    @DisplayName("퀴즈: 문제 풀다가 중간에 나감 → remainingAttempts 복원")
+    @DisplayName("퀴즈: 문제 풀다가 중간에 나감 → remainingAttempts 복원 (DB 직접 세팅)")
     void quiz_resume_remainingAttempts() throws Exception {
         BirthdayEvent event = birthdayEventRepository.save(BirthdayEvent.builder()
                 .eventUrl("RESUME06").status(EventStatus.ACTIVE)
@@ -317,18 +320,52 @@ class ResumeFlowTest {
                 .playLimit(3).sortOrder(1).build());
         quizChoiceRepository.save(QuizChoice.builder().quiz(q1).choiceText("O").isCorrect(true).build());
 
+        // 문제를 풀다가 중간에 나간 상태를 시뮬레이션: DB에 remainingAttempts만 세팅
+        quizEvent.setCurrentQuizRemainingAttempts(1);
+
         em.flush();
         em.clear();
 
-        // 문제 풀다가 중간에 나감 (remainingAttempts=1 남은 상태)
-        // Controller에서 updateRemainingAttempts 호출됨
-        mockMvc.perform(post("/events/RESUME06/quiz/answer")
+        // "재접속" - 아직 문제를 완료하지 않았으므로 remainingAttempts=1 복원
+        mockMvc.perform(get("/events/RESUME06"))
+                .andDo(print())
+                .andExpect(jsonPath("$.data.content.quiz.currentQuizIndex").value(0))
+                .andExpect(jsonPath("$.data.content.quiz.remainingAttempts").value(1));
+    }
+
+    @Test
+    @DisplayName("퀴즈: saveAnswer 호출 후 → remainingAttempts null로 초기화 확인")
+    void quiz_resume_remainingAttempts_afterAnswer() throws Exception {
+        BirthdayEvent event = birthdayEventRepository.save(BirthdayEvent.builder()
+                .eventUrl("RESUME08").status(EventStatus.ACTIVE)
+                .receiverName("김철수").senderName("박영희").title("축하해")
+                .expiredAt(LocalDateTime.now().plusDays(7)).build());
+
+        QuizEvent quizEvent = quizEventRepository.save(QuizEvent.builder()
+                .birthdayEvent(event).totalAttempt(0).build());
+
+        Gift gift = giftRepository.save(Gift.builder()
+                .giftName("선물").giftImageUrl("https://img/gift.jpg")
+                .description("축하!").isProbabilityPublic(true).build());
+        quizRewardRuleRepository.save(QuizRewardRule.builder()
+                .quizEvent(quizEvent).minCorrect(1).gift(gift).build());
+        quizRewardRuleRepository.save(QuizRewardRule.builder()
+                .quizEvent(quizEvent).minCorrect(0).gift(gift).build());
+
+        Quiz q1 = quizRepository.save(Quiz.builder()
+                .quizEvent(quizEvent).question("문제1").quizType(QuizType.OX)
+                .playLimit(3).sortOrder(1).build());
+        quizChoiceRepository.save(QuizChoice.builder().quiz(q1).choiceText("O").isCorrect(true).build());
+
+        em.flush();
+        em.clear();
+
+        // saveAnswer 호출 → 문제 완료 → remainingAttempts는 null로 초기화
+        mockMvc.perform(post("/events/RESUME08/quiz/answer")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"quizId\":" + q1.getQuizId() + ",\"correct\":false,\"remainingAttempts\":1}"));
 
-        // "재접속" - 문제는 완료됐으므로 remainingAttempts는 null
-        // (answer가 호출되면 문제가 완료된 것이므로 remainingAttempts는 null로 초기화됨)
-        mockMvc.perform(get("/events/RESUME06"))
+        mockMvc.perform(get("/events/RESUME08"))
                 .andDo(print())
                 .andExpect(jsonPath("$.data.content.quiz.currentQuizIndex").value(1))
                 .andExpect(jsonPath("$.data.content.quiz.remainingAttempts").isEmpty());

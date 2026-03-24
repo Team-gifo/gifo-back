@@ -110,6 +110,10 @@ public class QuizService {
      * 프론트에서 오답 시도할 때마다 호출하여 재접속 시 이어하기용으로 저장
      */
     public void updateRemainingAttempts(String eventUrl, int remainingAttempts) {
+        if (remainingAttempts < 0) {
+            throw new QuizException(ErrorCode.INVALID_ARGUMENT);
+        }
+
         BirthdayEvent event = entityFinder.getEventByUrlOrThrow(eventUrl);
 
         QuizEvent quizEvent = event.getQuizEvent();

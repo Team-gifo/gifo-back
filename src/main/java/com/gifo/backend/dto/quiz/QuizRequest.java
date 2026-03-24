@@ -1,5 +1,8 @@
 package com.gifo.backend.dto.quiz;
 
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+
 /**
  * 퀴즈 도메인 요청 DTO
  */
@@ -16,8 +19,10 @@ public class QuizRequest {
      * 문제 1개 풀이 결과 저장
      */
     public record Answer(
+            @NotNull(message = "quizId는 필수입니다.")
             Long quizId,
             boolean correct,
+            @Min(value = 0, message = "시도 횟수는 0 이상이어야 합니다.")
             int remainingAttempts
     ) {}
 }
