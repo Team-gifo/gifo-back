@@ -103,9 +103,9 @@ public class CapsuleService {
             throw new CapsuleException(ErrorCode.CAPSULE_NOT_FOUND);
         }
 
-        // 기존 선택이 있으면 해제 (재선택 허용)
+        // 기존 선택이 있으면 모두 해제 (재선택 허용, 다중 결과 안전 처리)
         capsuleDrawRepository.findByCapsuleEventAndSelectedTrue(capsuleEvent)
-                .ifPresent(CapsuleDraw::unselect);
+                .forEach(CapsuleDraw::unselect);
 
         // 뽑기 이력에서 해당 캡슐 찾기 (fetch join으로 N+1 방지)
         CapsuleDraw draw = capsuleDrawRepository
