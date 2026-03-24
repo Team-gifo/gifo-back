@@ -10,7 +10,7 @@ public class QuizRequest {
 
     /**
      * POST /events/{eventUrl}/quiz/result 요청
-     * 프론트에서 채점 완료 후 최종 정답 수만 전송
+     * 프론트에서 채점 완료 후 호출 (서버가 DB에서 정답 수 계산)
      */
     public record Result(int correctCount) {}
 

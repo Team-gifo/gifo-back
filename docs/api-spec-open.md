@@ -139,7 +139,7 @@ GET /events/{eventUrl}
 |------|------|------|
 | `playCount` | int | 총 뽑기 횟수 (이벤트 생성 시 설정) |
 | `remainingDrawCount` | int | 남은 뽑기 횟수 |
-| `selected` | boolean | 최종 선택 완료 여부 (`true`면 더 이상 뽑기/선택 불가) |
+| `selected` | boolean | 선택 완료 여부 (`true`면 뽑기 불가, 선택 변경은 가능) |
 | `list` | Array | 남은 캡슐 목록 (이미 뽑힌 캡슐은 제외됨) |
 | `list[].itemName` | String | 선물 이름 |
 | `list[].imageUrl` | String | 선물 이미지 URL |
@@ -447,6 +447,8 @@ POST /events/{eventUrl}/quiz/answer
 | 이미 답변한 문제 | `QUIZ_ALREADY_ANSWERED` | 400 |
 | 퀴즈 이벤트 없음 | `QUIZ_NOT_FOUND` | 404 |
 | 문제가 없음 | `QUIZ_QUESTION_NOT_FOUND` | 404 |
+| quizId 누락 | `VALIDATION_ERROR` | 400 |
+| remainingAttempts 음수 | `INVALID_ARGUMENT` | 400 |
 
 ### 참고
 
@@ -548,7 +550,7 @@ DELETE /events/{eventUrl}/progress
    → POST /events/{eventUrl}/capsules/draw (1회 뽑기)
    → 결과를 프론트 로컬 히스토리에 push, 오른쪽에 "~~를 뽑았습니다" 표시
    → 남은 횟수만큼 반복 또는 원하는 선물이 나오면 중단
-   → (이후 단계) POST /events/{eventUrl}/capsules/select로 최종 선물 선택
+   → POST /events/{eventUrl}/capsules/select로 최종 선물 선택 (이미 선택한 경우에도 변경 가능)
 
 2-B. 퀴즈 플로우
    → 프론트에서 문항별 채점 (answer 비교, playLimit 재시도)

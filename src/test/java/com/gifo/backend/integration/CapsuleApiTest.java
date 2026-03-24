@@ -7,7 +7,6 @@ import com.gifo.backend.entity.capsule.CapsuleEvent;
 import com.gifo.backend.entity.event.BirthdayEvent;
 import com.gifo.backend.entity.event.EventStatus;
 import com.gifo.backend.entity.gift.Gift;
-import com.gifo.backend.repository.capsule.CapsuleDrawRepository;
 import com.gifo.backend.repository.capsule.CapsuleEventRepository;
 import com.gifo.backend.repository.capsule.CapsuleRepository;
 import com.gifo.backend.repository.event.BirthdayEventRepository;

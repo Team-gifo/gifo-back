@@ -75,8 +75,7 @@ public class QuizService {
                 .correct(request.correct())
                 .build());
 
-        // 현재 문제의 남은 시도 횟수 저장 (재접속 시 이어하기용)
-        // 문제가 완료되었으므로 null로 초기화 (다음 문제는 아직 시작 안 함)
+        // 문제가 완료되었으므로 remainingAttempts null로 초기화
         quizEvent.setCurrentQuizRemainingAttempts(null);
 
         int currentQuizIndex = (int) quizAnswerRepository.countByQuizEvent(quizEvent);

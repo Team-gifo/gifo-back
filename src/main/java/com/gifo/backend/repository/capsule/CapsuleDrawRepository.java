@@ -26,7 +26,7 @@ public interface CapsuleDrawRepository extends JpaRepository<CapsuleDraw, Long> 
             @Param("capsuleEvent") CapsuleEvent capsuleEvent,
             @Param("capsuleId") Long capsuleId);
 
-    Optional<CapsuleDraw> findByCapsuleEventAndSelectedTrue(CapsuleEvent capsuleEvent);
+    List<CapsuleDraw> findByCapsuleEventAndSelectedTrue(CapsuleEvent capsuleEvent);
 
     boolean existsByCapsuleEventAndSelectedTrue(CapsuleEvent capsuleEvent);
 
