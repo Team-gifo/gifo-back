@@ -25,7 +25,7 @@ public class CapsuleDraw extends BaseEntity {
     @JoinColumn(name = "capsule_id", nullable = false)
     private Capsule capsule;
 
-    @Column(name = "selected", nullable = false)
+    @Column(name = "selected", nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
     @Builder.Default
     private Boolean selected = false;
 

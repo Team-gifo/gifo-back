@@ -29,10 +29,7 @@ public class QuizController {
             @PathVariable String eventUrl,
             @Valid @RequestBody QuizRequest.Answer request) {
 
-        // 남은 시도 횟수 업데이트 (재접속 시 이어하기용)
-        quizService.updateRemainingAttempts(eventUrl, request.remainingAttempts());
-
-        QuizResponse.Answer response = quizService.saveAnswer(eventUrl, request);
+        QuizResponse.Answer response = quizService.saveAnswerWithAttempts(eventUrl, request);
         return ResponseEntity.ok(ApiResponse.success("문제 결과 저장 성공", response));
     }
 
@@ -44,7 +41,7 @@ public class QuizController {
     @Operation(summary = "퀴즈 결과 저장", description = "모든 문제 완료 후 최종 보상을 판정합니다.")
     public ResponseEntity<ApiResponse<QuizResponse.Result>> saveResult(
             @PathVariable String eventUrl,
-            @RequestBody QuizRequest.Result request) {
+            @Valid @RequestBody QuizRequest.Result request) {
 
         QuizResponse.Result response = quizService.saveResult(eventUrl, request);
         return ResponseEntity.ok(ApiResponse.success("퀴즈 결과 저장 성공", response));

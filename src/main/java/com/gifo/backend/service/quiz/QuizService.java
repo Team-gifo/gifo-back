@@ -38,6 +38,16 @@ public class QuizService {
     private final QuizRewardRuleRepository quizRewardRuleRepository;
 
     /**
+     * 문제별 결과 저장 + 남은 시도 횟수 업데이트 (단일 트랜잭션)
+     * 컨트롤러에서 이 메서드를 호출하면 remainingAttempts 업데이트와 답변 저장이
+     * 같은 트랜잭션에서 실행되어 부분 커밋 문제를 방지합니다.
+     */
+    public QuizResponse.Answer saveAnswerWithAttempts(String eventUrl, QuizRequest.Answer request) {
+        updateRemainingAttempts(eventUrl, request.remainingAttempts());
+        return saveAnswer(eventUrl, request);
+    }
+
+    /**
      * 문제별 결과 저장
      * 프론트에서 정답을 맞추거나 playLimit을 소진했을 때 호출
      */
