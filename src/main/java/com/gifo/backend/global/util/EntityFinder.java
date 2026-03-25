@@ -1,10 +1,13 @@
 package com.gifo.backend.global.util;
 
+import com.gifo.backend.entity.capsule.CapsuleDraw;
+import com.gifo.backend.entity.capsule.CapsuleEvent;
 import com.gifo.backend.entity.event.BirthdayEvent;
 import com.gifo.backend.entity.event.EventStatus;
 import com.gifo.backend.global.ErrorCode;
 import com.gifo.backend.global.exception.capsule.CapsuleException;
 import com.gifo.backend.global.exception.event.EventException;
+import com.gifo.backend.repository.capsule.CapsuleDrawRepository;
 import com.gifo.backend.repository.event.BirthdayEventRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -23,6 +26,7 @@ import org.springframework.stereotype.Component;
 public class EntityFinder {
 
     private final BirthdayEventRepository birthdayEventRepository;
+    private final CapsuleDrawRepository capsuleDrawRepository;
 
     /**
      * eventId(PK)로 이벤트를 단건 조회합니다.
@@ -50,8 +54,10 @@ public class EntityFinder {
      * 안전하게 데이터를 획득하고 변경할 때 사용합니다.
      */
     public BirthdayEvent getEventByUrlForUpdateOrThrow(String eventUrl) {
-        return birthdayEventRepository.findByEventUrlForUpdate(eventUrl)
+        BirthdayEvent event = birthdayEventRepository.findByEventUrlForUpdate(eventUrl)
                 .orElseThrow(() -> new EventException(ErrorCode.EVENT_NOT_FOUND));
+        validateEventStatus(event);
+        return event;
     }
 
     /**
@@ -65,5 +71,15 @@ public class EntityFinder {
         if (event.getStatus() == EventStatus.DELETED) {
             throw new EventException(ErrorCode.EVENT_DELETED);
         }
+    }
+
+    /**
+     * 캡슐 뽑기 이력에서 특정 캡슐을 조회합니다 (fetch join으로 Gift N+1 방지).
+     * 이력이 없으면 CAPSULE_DRAW_NOT_FOUND 예외를 발생시킵니다.
+     */
+    public CapsuleDraw getCapsuleDrawWithGiftOrThrow(CapsuleEvent capsuleEvent, Long capsuleId) {
+        return capsuleDrawRepository
+                .findByCapsuleEventAndCapsuleWithGift(capsuleEvent, capsuleId)
+                .orElseThrow(() -> new CapsuleException(ErrorCode.CAPSULE_DRAW_NOT_FOUND));
     }
 }

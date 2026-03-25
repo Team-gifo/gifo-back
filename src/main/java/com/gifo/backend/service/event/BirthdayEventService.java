@@ -4,6 +4,7 @@ import com.gifo.backend.dto.event.BirthdayEventCreateRequest;
 import com.gifo.backend.dto.event.BirthdayEventCreateResponse;
 import com.gifo.backend.dto.event.EventResponse;
 import com.gifo.backend.entity.capsule.Capsule;
+import com.gifo.backend.entity.capsule.CapsuleDraw;
 import com.gifo.backend.entity.capsule.CapsuleEvent;
 import com.gifo.backend.entity.direct.DirectEvent;
 import com.gifo.backend.entity.event.BirthdayEvent;
@@ -47,6 +48,7 @@ public class BirthdayEventService {
     private final QuizRepository quizRepository;
     private final QuizChoiceRepository quizChoiceRepository;
     private final QuizRewardRuleRepository quizRewardRuleRepository;
+    private final QuizAnswerRepository quizAnswerRepository;
     private final EntityFinder entityFinder;
 
     private static final String CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -127,7 +129,7 @@ public class BirthdayEventService {
     }
 
     // ── 가차 콘텐츠 빌드 ─────────────────────────────
-    // 이미 뽑힌 캡슐 제외 → 남은 캡슐만 반환 + 남은 뽑기 횟수 계산
+    // 이미 뽑힌 캡슐 제외 → 남은 캡슐만 반환 + 남은 뽑기 횟수 계산 + 뽑기 히스토리
     private EventResponse.GachaContent buildGachaContent(CapsuleEvent capsuleEvent) {
         List<Capsule> allCapsules = capsuleRepository.findByCapsuleEvent(capsuleEvent);
         // 이미 뽑힌 캡슐 ID Set으로 필터링 (O(1) lookup)
@@ -151,7 +153,21 @@ public class BirthdayEventService {
                         c.getGift().getIsProbabilityPublic()))
                 .toList();
 
-        return new EventResponse.GachaContent(capsuleEvent.getMaxDrawCount(), remainingDraws, items);
+        // 뽑기 히스토리 (재접속 시 복원용)
+        List<CapsuleDraw> draws = capsuleDrawRepository.findByCapsuleEventWithGift(capsuleEvent);
+        boolean hasSelected = draws.stream().anyMatch(CapsuleDraw::getSelected);
+
+        List<EventResponse.DrawHistoryItem> drawHistory = draws.stream()
+                .map(d -> new EventResponse.DrawHistoryItem(
+                        d.getCapsule().getCapsuleId(),
+                        d.getCapsule().getGift().getGiftName(),
+                        d.getCapsule().getGift().getGiftImageUrl(),
+                        d.getCapsule().getGift().getDescription(),
+                        d.getSelected()))
+                .toList();
+
+        return new EventResponse.GachaContent(
+                capsuleEvent.getMaxDrawCount(), remainingDraws, hasSelected, items, drawHistory);
     }
 
     // ── 퀴즈 콘텐츠 빌드 ─────────────────────────────
@@ -186,7 +202,20 @@ public class BirthdayEventService {
                         .map(this::buildQuizItem)
                         .toList();
 
-        return new EventResponse.QuizContent(successReward, failReward, quizItems);
+        // 퀴즈 풀이 이력 (재접속 시 복원용)
+        List<QuizAnswer> answers = quizAnswerRepository.findByQuizEventOrderByQuizAnswerIdAsc(quizEvent);
+        int currentQuizIndex = answers.size();
+        Integer remainingAttempts = quizEvent.getCurrentQuizRemainingAttempts();
+
+        List<EventResponse.AnswerHistoryItem> answerHistory = answers.stream()
+                .map(a -> new EventResponse.AnswerHistoryItem(
+                        a.getQuiz().getQuizId(),
+                        a.getCorrect()))
+                .toList();
+
+        return new EventResponse.QuizContent(
+                currentQuizIndex, remainingAttempts,
+                successReward, failReward, quizItems, answerHistory);
     }
 
     // 퀴즈 문항 빌드: 타입별 선택지 + 정답 구성
@@ -256,21 +285,22 @@ public class BirthdayEventService {
     // 진행 데이터 초기화 (DELETE /events/{eventUrl}/progress)
     // - 재접속 시 "다시 시작하겠습니까?" → 기존 뽑기/퀴즈 이력 삭제
     // - 캡슐: capsule_draw 전체 삭제
-    // - 퀴즈: totalAttempt 초기화 (채점은 프론트에서 처리)
+    // - 퀴즈: quiz_answer 전체 삭제 + totalAttempt/remainingAttempts 초기화
     // - 언박싱: 서버 측 초기화 데이터 없음
     // ══════════════════════════════════════════════
 
     public void resetProgress(String eventUrl) {
-        BirthdayEvent event = birthdayEventRepository.findByEventUrlForUpdate(eventUrl)
-                .orElseThrow(() -> new EventException(ErrorCode.EVENT_NOT_FOUND));
-        entityFinder.validateEventStatus(event);
+        BirthdayEvent event = entityFinder.getEventByUrlForUpdateOrThrow(eventUrl);
 
         if (event.getCapsuleEvent() != null) {
             capsuleDrawRepository.deleteByCapsuleEvent(event.getCapsuleEvent());
         } else if (event.getQuizEvent() != null) {
-            event.getQuizEvent().setTotalAttempt(0);
-            event.getQuizEvent().setLastCorrectCount(null);
-            event.getQuizEvent().setLastSuccess(null);
+            QuizEvent quizEvent = event.getQuizEvent();
+            quizAnswerRepository.deleteByQuizEvent(quizEvent);
+            quizEvent.setTotalAttempt(0);
+            quizEvent.setLastCorrectCount(null);
+            quizEvent.setLastSuccess(null);
+            quizEvent.setCurrentQuizRemainingAttempts(null);
         } else if (event.getDirectEvent() != null) {
         }
     }

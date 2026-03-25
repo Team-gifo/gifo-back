@@ -24,4 +24,16 @@ public class CapsuleDraw extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "capsule_id", nullable = false)
     private Capsule capsule;
+
+    @Column(name = "selected", nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+    @Builder.Default
+    private Boolean selected = false;
+
+    public void select() {
+        this.selected = true;
+    }
+
+    public void unselect() {
+        this.selected = false;
+    }
 }

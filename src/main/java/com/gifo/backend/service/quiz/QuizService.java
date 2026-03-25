@@ -3,25 +3,29 @@ package com.gifo.backend.service.quiz;
 import com.gifo.backend.dto.quiz.QuizRequest;
 import com.gifo.backend.dto.quiz.QuizResponse;
 import com.gifo.backend.entity.event.BirthdayEvent;
+import com.gifo.backend.entity.quiz.Quiz;
+import com.gifo.backend.entity.quiz.QuizAnswer;
 import com.gifo.backend.entity.quiz.QuizEvent;
 import com.gifo.backend.global.ErrorCode;
 import com.gifo.backend.global.exception.quiz.QuizException;
 import com.gifo.backend.global.util.EntityFinder;
+import com.gifo.backend.repository.quiz.QuizAnswerRepository;
 import com.gifo.backend.repository.quiz.QuizEventRepository;
+import com.gifo.backend.repository.quiz.QuizRepository;
 import com.gifo.backend.repository.quiz.QuizRewardRuleRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 퀴즈 결과 저장 비즈니스 로직
+ * 퀴즈 비즈니스 로직
  *
- * POST /events/{eventUrl}/quiz/result 처리:
- * 1. 이벤트 유효성 검증 (ACTIVE 상태인지)
- * 2. correctCount 유효성 검증
- * 3. 원자적 totalAttempt 증가
- * 4. 보상 규칙 기준 성공/실패 판정
- * 5. 결과(lastCorrectCount, lastSuccess) QuizEvent에 영속
+ * 1. POST /events/{eventUrl}/quiz/answer — 문제별 결과 저장
+ *    정답을 맞추거나 playLimit 소진 시 호출 → QuizAnswer 저장 + remainingAttempts 관리
+ *
+ * 2. POST /events/{eventUrl}/quiz/result — 최종 보상 판정
+ *    모든 문제 완료 후 호출 → 서버가 DB에서 정답 수 계산 → 성공/실패 보상 반환
  */
 @Service
 @RequiredArgsConstructor
@@ -29,18 +33,82 @@ import org.springframework.transaction.annotation.Transactional;
 public class QuizService {
 
     private final EntityFinder entityFinder;
+    private final QuizRepository quizRepository;
     private final QuizEventRepository quizEventRepository;
+    private final QuizAnswerRepository quizAnswerRepository;
     private final QuizRewardRuleRepository quizRewardRuleRepository;
 
+    /**
+     * 문제별 결과 저장 + 남은 시도 횟수 업데이트 (단일 트랜잭션)
+     * 컨트롤러에서 이 메서드를 호출하면 remainingAttempts 업데이트와 답변 저장이
+     * 같은 트랜잭션에서 실행되어 부분 커밋 문제를 방지합니다.
+     */
+    public QuizResponse.Answer saveAnswerWithAttempts(String eventUrl, QuizRequest.Answer request) {
+        updateRemainingAttempts(eventUrl, request.remainingAttempts());
+        return saveAnswer(eventUrl, request);
+    }
+
+    /**
+     * 문제별 결과 저장
+     * 프론트에서 정답을 맞추거나 playLimit을 소진했을 때 호출
+     */
+    public QuizResponse.Answer saveAnswer(String eventUrl, QuizRequest.Answer request) {
+        BirthdayEvent event = entityFinder.getEventByUrlOrThrow(eventUrl);
+
+        QuizEvent quizEvent = event.getQuizEvent();
+        if (quizEvent == null) {
+            throw new QuizException(ErrorCode.QUIZ_NOT_FOUND);
+        }
+
+        // 해당 문제가 현재 이벤트에 소속되는지 검증
+        Quiz quiz = quizRepository.findByQuizEventAndQuizId(quizEvent, request.quizId())
+                .orElseThrow(() -> new QuizException(ErrorCode.QUIZ_QUESTION_NOT_FOUND));
+
+        // 이미 답변한 문제인지 검증
+        if (quizAnswerRepository.existsByQuizEventAndQuiz(quizEvent, quiz)) {
+            throw new QuizException(ErrorCode.QUIZ_ALREADY_ANSWERED);
+        }
+
+        // QuizAnswer 저장 (unique constraint 위반 시 비즈니스 예외로 변환)
+        try {
+            quizAnswerRepository.saveAndFlush(QuizAnswer.builder()
+                    .quizEvent(quizEvent)
+                    .quiz(quiz)
+                    .correct(request.correct())
+                    .build());
+        } catch (DataIntegrityViolationException e) {
+            throw new QuizException(ErrorCode.QUIZ_ALREADY_ANSWERED);
+        }
+
+        // 문제가 완료되었으므로 remainingAttempts null로 초기화
+        quizEvent.setCurrentQuizRemainingAttempts(null);
+
+        int currentQuizIndex = (int) quizAnswerRepository.countByQuizEvent(quizEvent);
+
+        return new QuizResponse.Answer(request.quizId(), request.correct(), currentQuizIndex);
+    }
+
+    /**
+     * 최종 보상 판정
+     * 모든 문제 완료 후 서버가 DB에서 정답 수를 계산하여 보상 결정
+     */
     public QuizResponse.Result saveResult(String eventUrl, QuizRequest.Result request) {
         BirthdayEvent event = entityFinder.getEventByUrlOrThrow(eventUrl);
 
         QuizEvent quizEvent = event.getQuizEvent();
-
-        int totalQuizCount = quizEvent.getQuizzes().size();
-        if (request.correctCount() < 0 || request.correctCount() > totalQuizCount) {
-            throw new QuizException(ErrorCode.INVALID_ARGUMENT);
+        if (quizEvent == null) {
+            throw new QuizException(ErrorCode.QUIZ_NOT_FOUND);
         }
+
+        // 모든 문제를 풀었는지 검증
+        long answeredCount = quizAnswerRepository.countByQuizEvent(quizEvent);
+        long totalQuizCount = quizRepository.countByQuizEvent(quizEvent);
+        if (answeredCount < totalQuizCount) {
+            throw new QuizException(ErrorCode.QUIZ_NOT_ALL_ANSWERED);
+        }
+
+        // 서버가 DB에서 정답 수 계산
+        int correctCount = (int) quizAnswerRepository.countByQuizEventAndCorrectTrue(quizEvent);
 
         // 원자적 totalAttempt 증가 (동시성 안전)
         quizEventRepository.incrementTotalAttempt(quizEvent.getQuizEventId());
@@ -49,12 +117,31 @@ public class QuizService {
         boolean success = quizRewardRuleRepository
                 .findByQuizEventOrderByMinCorrectDesc(quizEvent).stream()
                 .filter(r -> r.getMinCorrect() != null && r.getMinCorrect() > 0)
-                .anyMatch(r -> request.correctCount() >= r.getMinCorrect());
+                .anyMatch(r -> correctCount >= r.getMinCorrect());
 
         // 결과를 QuizEvent에 영속
-        quizEvent.setLastCorrectCount(request.correctCount());
+        quizEvent.setLastCorrectCount(correctCount);
         quizEvent.setLastSuccess(success);
 
-        return new QuizResponse.Result(request.correctCount(), success);
+        return new QuizResponse.Result(correctCount, success);
+    }
+
+    /**
+     * 현재 풀고 있는 문제의 남은 시도 횟수 업데이트
+     * 프론트에서 오답 시도할 때마다 호출하여 재접속 시 이어하기용으로 저장
+     */
+    public void updateRemainingAttempts(String eventUrl, int remainingAttempts) {
+        if (remainingAttempts < 0) {
+            throw new QuizException(ErrorCode.INVALID_ARGUMENT);
+        }
+
+        BirthdayEvent event = entityFinder.getEventByUrlOrThrow(eventUrl);
+
+        QuizEvent quizEvent = event.getQuizEvent();
+        if (quizEvent == null) {
+            throw new QuizException(ErrorCode.QUIZ_NOT_FOUND);
+        }
+
+        quizEvent.setCurrentQuizRemainingAttempts(remainingAttempts);
     }
 }

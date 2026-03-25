@@ -32,9 +32,15 @@ public enum ErrorCode {
     CAPSULE_NOT_FOUND(HttpStatus.NOT_FOUND, "캡슐 이벤트를 찾을 수 없습니다."),
     CAPSULE_DRAW_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "뽑기 가능 횟수를 초과했습니다."),
     CAPSULE_ALL_DRAWN(HttpStatus.BAD_REQUEST, "모든 캡슐을 이미 뽑았습니다."),
+    CAPSULE_DRAW_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 캡슐 뽑기 이력을 찾을 수 없습니다."),
+    CAPSULE_ALREADY_SELECTED(HttpStatus.BAD_REQUEST, "이미 캡슐을 선택했습니다."),
 
     // 퀴즈 도메인
     QUIZ_NOT_FOUND(HttpStatus.NOT_FOUND, "퀴즈 이벤트를 찾을 수 없습니다."),
+    QUIZ_ALREADY_ANSWERED(HttpStatus.BAD_REQUEST, "이미 답변한 문제입니다."),
+    QUIZ_ALL_ANSWERED(HttpStatus.BAD_REQUEST, "모든 문제를 이미 풀었습니다."),
+    QUIZ_QUESTION_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 퀴즈 문제를 찾을 수 없습니다."),
+    QUIZ_NOT_ALL_ANSWERED(HttpStatus.BAD_REQUEST, "모든 문제를 풀어야 결과를 확인할 수 있습니다."),
 
     // 외부 API 오류
     NAVER_API_ERROR(HttpStatus.BAD_GATEWAY, "네이버 쇼핑 API 호출에 실패했습니다.");
