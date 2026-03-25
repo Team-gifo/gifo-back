@@ -14,6 +14,7 @@ import com.gifo.backend.repository.quiz.QuizEventRepository;
 import com.gifo.backend.repository.quiz.QuizRepository;
 import com.gifo.backend.repository.quiz.QuizRewardRuleRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -59,8 +60,8 @@ public class QuizService {
             throw new QuizException(ErrorCode.QUIZ_NOT_FOUND);
         }
 
-        // 해당 문제 존재 검증
-        Quiz quiz = quizRepository.findById(request.quizId())
+        // 해당 문제가 현재 이벤트에 소속되는지 검증
+        Quiz quiz = quizRepository.findByQuizEventAndQuizId(quizEvent, request.quizId())
                 .orElseThrow(() -> new QuizException(ErrorCode.QUIZ_QUESTION_NOT_FOUND));
 
         // 이미 답변한 문제인지 검증
@@ -68,12 +69,16 @@ public class QuizService {
             throw new QuizException(ErrorCode.QUIZ_ALREADY_ANSWERED);
         }
 
-        // QuizAnswer 저장
-        quizAnswerRepository.save(QuizAnswer.builder()
-                .quizEvent(quizEvent)
-                .quiz(quiz)
-                .correct(request.correct())
-                .build());
+        // QuizAnswer 저장 (unique constraint 위반 시 비즈니스 예외로 변환)
+        try {
+            quizAnswerRepository.saveAndFlush(QuizAnswer.builder()
+                    .quizEvent(quizEvent)
+                    .quiz(quiz)
+                    .correct(request.correct())
+                    .build());
+        } catch (DataIntegrityViolationException e) {
+            throw new QuizException(ErrorCode.QUIZ_ALREADY_ANSWERED);
+        }
 
         // 문제가 완료되었으므로 remainingAttempts null로 초기화
         quizEvent.setCurrentQuizRemainingAttempts(null);
@@ -93,6 +98,13 @@ public class QuizService {
         QuizEvent quizEvent = event.getQuizEvent();
         if (quizEvent == null) {
             throw new QuizException(ErrorCode.QUIZ_NOT_FOUND);
+        }
+
+        // 모든 문제를 풀었는지 검증
+        long answeredCount = quizAnswerRepository.countByQuizEvent(quizEvent);
+        long totalQuizCount = quizRepository.countByQuizEvent(quizEvent);
+        if (answeredCount < totalQuizCount) {
+            throw new QuizException(ErrorCode.QUIZ_NOT_ALL_ANSWERED);
         }
 
         // 서버가 DB에서 정답 수 계산

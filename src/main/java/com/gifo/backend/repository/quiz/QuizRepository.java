@@ -7,9 +7,14 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface QuizRepository extends JpaRepository<Quiz, Long> {
 
     @Query("SELECT DISTINCT q FROM Quiz q LEFT JOIN FETCH q.quizChoices WHERE q.quizEvent = :quizEvent ORDER BY q.sortOrder ASC, q.quizId ASC")
     List<Quiz> findByQuizEventOrderBySortOrderAsc(@Param("quizEvent") QuizEvent quizEvent);
+
+    Optional<Quiz> findByQuizEventAndQuizId(QuizEvent quizEvent, Long quizId);
+
+    long countByQuizEvent(QuizEvent quizEvent);
 }

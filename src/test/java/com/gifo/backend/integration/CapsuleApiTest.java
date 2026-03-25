@@ -206,9 +206,20 @@ class CapsuleApiTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value("SUCCESS"));
 
-        // 조회 - 두 번째 캡슐만 selected=true
-        mockMvc.perform(get("/events/{eventUrl}", eventUrl))
-                .andExpect(jsonPath("$.data.content.gacha.selected").value(true));
+        // 조회 - 두 번째 캡슐만 selected=true, 첫 번째는 해제
+        String getResult = mockMvc.perform(get("/events/{eventUrl}", eventUrl))
+                .andDo(print())
+                .andExpect(jsonPath("$.data.content.gacha.selected").value(true))
+                .andReturn().getResponse().getContentAsString();
+
+        // drawHistory에서 selected=true인 항목이 정확히 1개인지 검증
+        JsonNode drawHistory = objectMapper.readTree(getResult)
+                .path("data").path("content").path("gacha").path("drawHistory");
+        long selectedCount = 0;
+        for (JsonNode draw : drawHistory) {
+            if (draw.path("selected").asBoolean()) selectedCount++;
+        }
+        Assertions.assertEquals(1, selectedCount, "selected=true인 캡슐은 정확히 1개여야 합니다");
     }
 
     @Test

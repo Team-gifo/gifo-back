@@ -197,8 +197,8 @@ class QuizApiTest {
     }
 
     @Test
-    @DisplayName("7. 재접속 시 remainingAttempts 복원")
-    void remainingAttempts_restore() throws Exception {
+    @DisplayName("7. 답변 완료 후 remainingAttempts null 초기화 확인")
+    void remainingAttempts_clearedAfterAnswer() throws Exception {
         mockMvc.perform(post("/events/{eventUrl}/quiz/answer", eventUrl)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"quizId\":" + quiz1Id + ",\"correct\":true,\"remainingAttempts\":2}"));
@@ -207,6 +207,21 @@ class QuizApiTest {
                 .andDo(print())
                 .andExpect(jsonPath("$.data.content.quiz.currentQuizIndex").value(1))
                 .andExpect(jsonPath("$.data.content.quiz.remainingAttempts").isEmpty());
+    }
+
+    @Test
+    @DisplayName("9. 모든 문제 풀기 전 result 호출 시 에러")
+    void result_beforeAllAnswered() throws Exception {
+        mockMvc.perform(post("/events/{eventUrl}/quiz/answer", eventUrl)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"quizId\":" + quiz1Id + ",\"correct\":true,\"remainingAttempts\":0}"));
+
+        mockMvc.perform(post("/events/{eventUrl}/quiz/result", eventUrl)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"correctCount\":1}"))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("QUIZ_NOT_ALL_ANSWERED"));
     }
 
     @Test

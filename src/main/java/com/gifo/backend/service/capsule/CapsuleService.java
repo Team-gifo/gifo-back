@@ -108,9 +108,7 @@ public class CapsuleService {
                 .forEach(CapsuleDraw::unselect);
 
         // 뽑기 이력에서 해당 캡슐 찾기 (fetch join으로 N+1 방지)
-        CapsuleDraw draw = capsuleDrawRepository
-                .findByCapsuleEventAndCapsuleWithGift(capsuleEvent, capsuleId)
-                .orElseThrow(() -> new CapsuleException(ErrorCode.CAPSULE_DRAW_NOT_FOUND));
+        CapsuleDraw draw = entityFinder.getCapsuleDrawWithGiftOrThrow(capsuleEvent, capsuleId);
 
         draw.select();
 
