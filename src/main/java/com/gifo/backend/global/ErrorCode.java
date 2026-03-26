@@ -42,6 +42,7 @@ public enum ErrorCode {
     FILE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "파일 크기가 20MB를 초과합니다."),
     EMPTY_FILE(HttpStatus.BAD_REQUEST, "빈 파일은 업로드할 수 없습니다."),
     STORAGE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "파일 업로드에 실패했습니다."),
+    STORAGE_DELETE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "파일 삭제에 실패했습니다."),
     INVALID_IMAGE_URL(HttpStatus.BAD_REQUEST, "유효하지 않은 이미지 URL입니다."),
     INVALID_BGM_URL(HttpStatus.BAD_REQUEST, "유효하지 않은 BGM URL입니다."),
     BGM_UPLOAD_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "BGM은 최대 3개까지 업로드할 수 있습니다."),

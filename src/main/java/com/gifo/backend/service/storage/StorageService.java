@@ -94,17 +94,22 @@ public class StorageService {
     }
 
     public void deleteBgm(String bgmUrl) {
-        if (bgmUrl == null || !bgmUrl.startsWith(cdnDomain + "/")) {
+        String normalizedDomain = cdnDomain.endsWith("/") ? cdnDomain.substring(0, cdnDomain.length() - 1) : cdnDomain;
+        if (bgmUrl == null || !bgmUrl.startsWith(normalizedDomain + "/")) {
             throw new StorageException(ErrorCode.INVALID_BGM_URL);
         }
-        String objectKey = bgmUrl.substring((cdnDomain + "/").length());
+        String objectKey = bgmUrl.substring((normalizedDomain + "/").length());
         if (!objectKey.startsWith("bgm/")) {
             throw new StorageException(ErrorCode.INVALID_BGM_URL);
         }
-        s3Client.deleteObject(DeleteObjectRequest.builder()
-                .bucket(bucketName)
-                .key(objectKey)
-                .build());
+        try {
+            s3Client.deleteObject(DeleteObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(objectKey)
+                    .build());
+        } catch (S3Exception | SdkClientException e) {
+            throw new StorageException(ErrorCode.STORAGE_DELETE_FAILED);
+        }
     }
 
     private byte[] compress(MultipartFile file) throws IOException {
@@ -155,6 +160,9 @@ public class StorageService {
         }
 
         String contentType = file.getContentType();
+        if (contentType == null) {
+            throw new StorageException(ErrorCode.INVALID_AUDIO_FILE_TYPE);
+        }
         String filename = file.getOriginalFilename() != null ? file.getOriginalFilename().toLowerCase() : "";
         String extension = extractExtension(filename);
 
