@@ -33,7 +33,7 @@
 |-----------|----------|------|
 | `EMPTY_FILE` | 400 | 빈 파일 업로드 시도 |
 | `INVALID_FILE_TYPE` | 400 | JPEG, PNG 외 파일 형식 |
-| `FILE_SIZE_EXCEEDED` | 400 | 파일 크기 5MB 초과 (multipart 설정 한도 20MB) |
+| `FILE_SIZE_EXCEEDED` | 400 | 파일 크기 20MB 초과 |
 | `STORAGE_UPLOAD_FAILED` | 500 | S3 업로드 실패 |
 
 ---

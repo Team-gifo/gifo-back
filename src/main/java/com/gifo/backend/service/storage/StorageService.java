@@ -7,13 +7,16 @@ import net.coobird.thumbnailator.Thumbnails;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.UUID;
 
@@ -48,7 +51,7 @@ public class StorageService {
                     .build();
 
             s3Client.putObject(putRequest, RequestBody.fromBytes(compressed));
-        } catch (IOException e) {
+        } catch (IOException | S3Exception | SdkClientException e) {
             throw new StorageException(ErrorCode.STORAGE_UPLOAD_FAILED);
         }
 
@@ -56,18 +59,23 @@ public class StorageService {
     }
 
     private byte[] compress(MultipartFile file) throws IOException {
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        Thumbnails.of(file.getInputStream())
-                .size(1920, 1920)
-                .keepAspectRatio(true)
-                .outputFormat("JPEG")
-                .outputQuality(0.8)
-                .toOutputStream(output);
-        return output.toByteArray();
+        try (InputStream in = file.getInputStream();
+             ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+            Thumbnails.of(in)
+                    .size(1920, 1920)
+                    .keepAspectRatio(true)
+                    .outputFormat("JPEG")
+                    .outputQuality(0.8)
+                    .toOutputStream(output);
+            return output.toByteArray();
+        }
     }
 
     public void delete(String imageUrl) {
-        String objectKey = imageUrl.replace(cdnDomain + "/", "");
+        if (imageUrl == null || !imageUrl.startsWith(cdnDomain + "/")) {
+            throw new StorageException(ErrorCode.INVALID_IMAGE_URL);
+        }
+        String objectKey = imageUrl.substring((cdnDomain + "/").length());
         s3Client.deleteObject(DeleteObjectRequest.builder()
                 .bucket(bucketName)
                 .key(objectKey)
