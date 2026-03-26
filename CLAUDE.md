@@ -35,7 +35,10 @@ docker build -t gifo-backend:latest .
 
 - `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD` — PostgreSQL
 - `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_DEPLOYMENT_NAME` — Azure OpenAI
+- `LIGHTSAIL_ACCESS_KEY_ID`, `LIGHTSAIL_SECRET_ACCESS_KEY`, `LIGHTSAIL_BUCKET_NAME`, `LIGHTSAIL_BUCKET_REGION`, `LIGHTSAIL_ENDPOINT_URL`, `LIGHTSAIL_CDN_DOMAIN` — AWS Lightsail Object Storage
 - `API_SERVER_URL` — Swagger 서버 목록에 사용되는 HTTPS 서버 URL (없으면 Swagger에 잘못된 서버 항목이 표시됨)
+
+> **환경변수 추가 시 규칙**: `application.yml`에 새 환경변수를 추가할 때는 반드시 `.env.example`에도 해당 변수를 (빈 값으로) 추가해야 합니다.
 
 테스트는 `test` 프로파일(`application-test.yml`)로 H2 인메모리 DB에서 실행됩니다.
 
