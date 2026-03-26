@@ -45,7 +45,6 @@ public class StorageService {
                     .key(objectKey)
                     .contentType("image/jpeg")
                     .contentLength((long) compressed.length)
-                    .acl("public-read")
                     .build();
 
             s3Client.putObject(putRequest, RequestBody.fromBytes(compressed));
