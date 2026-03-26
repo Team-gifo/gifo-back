@@ -20,6 +20,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -29,10 +30,13 @@ public class StorageService {
     private static final List<String> ALLOWED_CONTENT_TYPES = List.of("image/jpeg", "image/png");
     private static final List<String> ALLOWED_EXTENSIONS = List.of(".jpg", ".jpeg", ".png");
 
-    private static final List<String> ALLOWED_AUDIO_CONTENT_TYPES =
-            List.of("audio/mpeg", "audio/wav", "audio/ogg", "audio/aac", "audio/mp4");
-    private static final List<String> ALLOWED_AUDIO_EXTENSIONS =
-            List.of(".mp3", ".wav", ".ogg", ".aac", ".m4a");
+    private static final Map<String, List<String>> AUDIO_EXTENSION_TO_CONTENT_TYPES = Map.ofEntries(
+            Map.entry(".mp3", List.of("audio/mpeg")),
+            Map.entry(".wav", List.of("audio/wav")),
+            Map.entry(".ogg", List.of("audio/ogg")),
+            Map.entry(".aac", List.of("audio/aac")),
+            Map.entry(".m4a", List.of("audio/mp4", "audio/x-m4a"))
+    );
     private static final long MAX_AUDIO_SIZE_BYTES = 20 * 1024 * 1024L; // 20MB
 
     private final S3Client s3Client;
@@ -154,7 +158,8 @@ public class StorageService {
         String filename = file.getOriginalFilename() != null ? file.getOriginalFilename().toLowerCase() : "";
         String extension = extractExtension(filename);
 
-        if (!ALLOWED_AUDIO_CONTENT_TYPES.contains(contentType) || !ALLOWED_AUDIO_EXTENSIONS.contains(extension)) {
+        List<String> allowedContentTypes = AUDIO_EXTENSION_TO_CONTENT_TYPES.getOrDefault(extension, List.of());
+        if (allowedContentTypes.isEmpty() || !allowedContentTypes.contains(contentType)) {
             throw new StorageException(ErrorCode.INVALID_AUDIO_FILE_TYPE);
         }
     }

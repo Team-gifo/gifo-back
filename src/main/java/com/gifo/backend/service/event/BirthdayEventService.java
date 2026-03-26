@@ -15,6 +15,7 @@ import com.gifo.backend.global.ErrorCode;
 import com.gifo.backend.global.exception.event.EventException;
 import com.gifo.backend.global.exception.storage.StorageException;
 import com.gifo.backend.global.util.EntityFinder;
+import lombok.extern.slf4j.Slf4j;
 import com.gifo.backend.service.storage.StorageService;
 import com.gifo.backend.repository.capsule.CapsuleDrawRepository;
 import com.gifo.backend.repository.capsule.CapsuleEventRepository;
@@ -33,6 +34,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -60,7 +62,7 @@ public class BirthdayEventService {
     public BirthdayEventCreateResponse createEvent(BirthdayEventCreateRequest req) {
 
         if (req.getUploadedBgmUrls() != null && req.getUploadedBgmUrls().size() > 3) {
-            throw new StorageException(ErrorCode.BGM_UPLOAD_LIMIT_EXCEEDED);
+            throw new EventException(ErrorCode.BGM_UPLOAD_LIMIT_EXCEEDED);
         }
 
         BirthdayEvent event = birthdayEventRepository.save(
@@ -100,8 +102,9 @@ public class BirthdayEventService {
                 .forEach(url -> {
                     try {
                         storageService.deleteBgm(url);
-                    } catch (StorageException ignored) {
+                    } catch (StorageException e) {
                         // 삭제 실패해도 이벤트 생성 자체는 성공으로 처리
+                        log.warn("업로드된 BGM 삭제 실패: {}", url, e);
                     }
                 });
     }

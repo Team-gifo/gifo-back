@@ -455,7 +455,7 @@ DELETE /events/{eventUrl}/progress
 | 에러 코드 | HTTP 상태 | 설명 |
 |-----------|----------|------|
 | `EMPTY_FILE` | 400 | 빈 파일 업로드 시도 |
-| `INVALID_AUDIO_FILE_TYPE` | 400 | MP3, WAV, OGG, AAC 외 파일 형식 |
+| `INVALID_AUDIO_FILE_TYPE` | 400 | MP3, WAV, OGG, AAC, M4A 외 파일 형식 |
 | `FILE_SIZE_EXCEEDED` | 400 | 파일 크기 20MB 초과 |
 | `BGM_UPLOAD_LIMIT_EXCEEDED` | 400 | 업로드된 BGM URL이 3개 초과 |
 | `STORAGE_UPLOAD_FAILED` | 500 | S3 업로드 실패 |
@@ -529,7 +529,7 @@ Content-Type: multipart/form-data
 ### 참고
 
 - 최대 파일 크기: **20MB**
-- 이벤트 생성 시 선택되지 않은 업로드 BGM은 서버에서 자동 삭제됩니다.
+- 이벤트 생성 시 선택되지 않은 업로드 BGM은 서버에서 삭제를 시도합니다(실패 시 무시될 수 있음).
 
 ---
 

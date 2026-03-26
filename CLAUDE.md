@@ -230,7 +230,7 @@ return ResponseEntity.ok(ApiResponse.success("삭제 성공"));         // 데�
 
 > Base URL: `{서버주소}/{base-path}`
 
-## POST /{endpoint}
+## {METHOD} /{endpoint}
 
 **설명**: 한 줄 설명
 
