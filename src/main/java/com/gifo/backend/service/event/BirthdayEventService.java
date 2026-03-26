@@ -15,6 +15,9 @@ import com.gifo.backend.entity.quiz.*;
 import com.gifo.backend.global.ErrorCode;
 import com.gifo.backend.global.exception.event.EventException;
 import com.gifo.backend.global.util.EntityFinder;
+import com.gifo.backend.service.bgm.BgmCleanupEvent;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import com.gifo.backend.repository.capsule.CapsuleDrawRepository;
 import com.gifo.backend.repository.capsule.CapsuleEventRepository;
 import com.gifo.backend.repository.capsule.CapsuleRepository;
@@ -32,6 +35,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -50,6 +54,7 @@ public class BirthdayEventService {
     private final QuizRewardRuleRepository quizRewardRuleRepository;
     private final QuizAnswerRepository quizAnswerRepository;
     private final EntityFinder entityFinder;
+    private final ApplicationEventPublisher eventPublisher;
 
     private static final String CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private static final int CODE_LENGTH = 8;
@@ -57,6 +62,10 @@ public class BirthdayEventService {
     private static final SecureRandom RANDOM = new SecureRandom();
 
     public BirthdayEventCreateResponse createEvent(BirthdayEventCreateRequest req) {
+
+        if (req.getUploadedBgmUrls() != null && req.getUploadedBgmUrls().size() > 3) {
+            throw new EventException(ErrorCode.BGM_UPLOAD_LIMIT_EXCEEDED);
+        }
 
         BirthdayEvent event = birthdayEventRepository.save(
                 BirthdayEvent.builder()
@@ -79,6 +88,8 @@ public class BirthdayEventService {
             if (req.getContent().getQuiz() != null) saveQuiz(event, req.getContent().getQuiz());
             if (req.getContent().getUnboxing() != null) saveUnboxing(event, req.getContent().getUnboxing());
         }
+
+        eventPublisher.publishEvent(new BgmCleanupEvent(this, req.getUploadedBgmUrls(), req.getBgm()));
 
         return BirthdayEventCreateResponse.builder()
                 .eventId(event.getEventId())

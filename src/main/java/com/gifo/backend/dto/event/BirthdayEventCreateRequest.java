@@ -22,8 +22,15 @@ public class BirthdayEventCreateRequest {
     @JsonProperty("sub_title")
     private String subTitle;
 
-    /** BGM ID 또는 파일명 */
+    /** 이벤트에 적용할 BGM CDN URL (프리셋 URL 또는 업로드된 URL) */
     private String bgm;
+
+    /**
+     * 이벤트 생성 전 업로드한 BGM URL 목록 (최대 3개).
+     * 이벤트 생성 완료 후 bgm으로 선택되지 않은 URL은 스토리지에서 삭제를 시도합니다(실패 시 무시될 수 있음).
+     */
+    @JsonProperty("uploaded_bgm_urls")
+    private List<String> uploadedBgmUrls;
 
     @JsonProperty("expired_at")
     private LocalDateTime expiredAt;

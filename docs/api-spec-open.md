@@ -614,6 +614,126 @@ DELETE /events/{eventUrl}/progress
 
 ---
 
+---
+
+# BGM API 명세서
+
+> Base URL: `{서버주소}/bgm`
+
+## 공통 에러 코드
+
+| 에러 코드 | HTTP 상태 | 설명 |
+|-----------|----------|------|
+| `EMPTY_FILE` | 400 | 빈 파일 업로드 시도 |
+| `INVALID_AUDIO_FILE_TYPE` | 400 | MP3, WAV, OGG, AAC, M4A 외 파일 형식 |
+| `FILE_SIZE_EXCEEDED` | 400 | 파일 크기 20MB 초과 |
+| `BGM_UPLOAD_LIMIT_EXCEEDED` | 400 | 업로드된 BGM URL이 3개 초과 |
+| `STORAGE_UPLOAD_FAILED` | 500 | S3 업로드 실패 |
+
+---
+
+## 1. 프리셋 BGM 목록 조회
+
+앱에서 제공하는 고정 프리셋 BGM 3개의 목록을 반환합니다.
+
+### Request
+
+```http
+GET /bgm/presets
+```
+
+### Response (200 OK)
+
+```json
+{
+  "code": "SUCCESS",
+  "message": "프리셋 BGM 조회 성공",
+  "data": [
+    { "id": "exciting",   "name": "신나는", "url": "https://cdn.example.com/bgm/preset/exciting.mp3" },
+    { "id": "calm",       "name": "잔잔한", "url": "https://cdn.example.com/bgm/preset/calm.mp3" },
+    { "id": "nostalgic",  "name": "추억",   "url": "https://cdn.example.com/bgm/preset/nostalgic.mp3" }
+  ]
+}
+```
+
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| `id` | String | 프리셋 식별자 |
+| `name` | String | 프리셋 표시 이름 |
+| `url` | String | CDN URL |
+
+---
+
+## 2. BGM 업로드
+
+사용자 커스텀 BGM 파일을 업로드하고 CDN URL을 반환합니다.
+이벤트 생성 전에 호출하며, 반환된 URL을 이벤트 생성 요청의 `bgm` 또는 `uploaded_bgm_urls`에 사용합니다.
+
+### Request
+
+```http
+POST /bgm/upload
+Content-Type: multipart/form-data
+```
+
+| 파라미터 | 위치 | 타입 | 필수 | 설명 |
+|---------|------|------|------|------|
+| `file` | form-data | MultipartFile | O | 업로드할 오디오 파일 (MP3, WAV, OGG, AAC, M4A) |
+
+### Response (200 OK)
+
+```json
+{
+  "code": "SUCCESS",
+  "message": "BGM 업로드 성공",
+  "data": {
+    "bgmUrl": "https://cdn.example.com/bgm/550e8400-e29b-41d4-a716-446655440000.mp3"
+  }
+}
+```
+
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| `bgmUrl` | String | 업로드된 BGM의 CDN URL |
+
+### 참고
+
+- 최대 파일 크기: **20MB**
+- 이벤트 생성 시 선택되지 않은 업로드 BGM은 서버에서 삭제를 시도합니다(실패 시 무시될 수 있음).
+
+---
+
+## BGM 선택 플로우
+
+```text
+1. GET /bgm/presets
+   → 프리셋 3개(신나는/잔잔한/추억) URL 수신
+
+2. (선택) POST /bgm/upload × N (최대 3회)
+   → 커스텀 BGM 업로드 → bgmUrl 수신
+
+3. 이벤트 생성 요청 (POST /events)에 포함:
+   - bgm: 최종 선택한 BGM URL (프리셋 또는 업로드된 URL 중 하나)
+   - uploaded_bgm_urls: 업로드한 모든 BGM URL 목록 (미선택 파일 삭제용)
+```
+
+**이벤트 생성 요청 예시:**
+
+```json
+{
+  "bgm": "https://cdn.example.com/bgm/aaaa.mp3",
+  "uploaded_bgm_urls": [
+    "https://cdn.example.com/bgm/aaaa.mp3",
+    "https://cdn.example.com/bgm/bbbb.mp3"
+  ],
+  ...
+}
+```
+
+> 프리셋을 선택한 경우 `uploaded_bgm_urls`는 생략하거나 빈 배열로 전달합니다.
+
+---
+
 ## 전체 플로우 요약
 
 ```text
