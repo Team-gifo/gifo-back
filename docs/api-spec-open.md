@@ -2,6 +2,82 @@
 
 > Base URL: `{서버주소}/events`
 
+---
+
+# 이미지 업로드 API 명세서
+
+> Base URL: `{서버주소}/images`
+
+## 공통 응답 형식
+
+모든 응답은 `ApiResponse<T>` 래퍼로 감싸서 반환됩니다.
+
+```json
+{
+  "code": "SUCCESS",
+  "message": "성공 메시지",
+  "data": { ... }
+}
+```
+
+### 에러 응답
+
+```json
+{
+  "code": "INVALID_FILE_TYPE",
+  "message": "허용되지 않는 파일 형식입니다. JPEG, PNG만 업로드 가능합니다."
+}
+```
+
+| 에러 코드 | HTTP 상태 | 설명 |
+|-----------|----------|------|
+| `EMPTY_FILE` | 400 | 빈 파일 업로드 시도 |
+| `INVALID_FILE_TYPE` | 400 | JPEG, PNG 외 파일 형식 |
+| `FILE_SIZE_EXCEEDED` | 400 | 파일 크기 20MB 초과 |
+| `STORAGE_UPLOAD_FAILED` | 500 | S3 업로드 실패 |
+
+---
+
+## 1. 이미지 업로드
+
+이미지를 AWS Lightsail Object Storage(S3 호환)에 업로드하고 CDN URL을 반환합니다.
+`type`에 따라 저장 경로가 분리됩니다 (`memories/`, `gifts/`, `quizzes/`).
+
+### Request
+
+```http
+POST /images
+Content-Type: multipart/form-data
+```
+
+| 파라미터 | 위치 | 타입 | 필수 | 설명 |
+|---------|------|------|------|------|
+| `file` | form-data | MultipartFile | O | 업로드할 이미지 파일 (JPEG, PNG) |
+| `type` | query | String | O | 이미지 용도 — `MEMORY` / `GIFT` / `QUIZ` |
+
+### Response (200 OK)
+
+```json
+{
+  "code": "SUCCESS",
+  "message": "이미지 업로드 성공",
+  "data": {
+    "imageUrl": "https://cdn.example.com/gifts/550e8400-e29b-41d4-a716-446655440000.jpg"
+  }
+}
+```
+
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| `imageUrl` | String | 업로드된 이미지의 CDN URL |
+
+### 참고
+
+- 업로드된 이미지는 최대 1920×1920으로 자동 리사이즈되며 JPEG quality 0.8로 압축됩니다.
+- 반환된 `imageUrl`을 선물 포장(이벤트 생성) 요청의 이미지 필드에 사용합니다.
+
+---
+
 ## 공통 응답 형식
 
 모든 응답은 `ApiResponse<T>` 래퍼로 감싸서 반환됩니다.

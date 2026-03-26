@@ -23,6 +23,18 @@ spring:
           options:
             deployment-name: ${AZURE_OPENAI_DEPLOYMENT_NAME}
 
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
+
+storage:
+  access-key-id: ${LIGHTSAIL_ACCESS_KEY_ID}
+  secret-access-key: ${LIGHTSAIL_SECRET_ACCESS_KEY}
+  bucket-name: ${LIGHTSAIL_BUCKET_NAME}
+  region: ${LIGHTSAIL_BUCKET_REGION}
+  cdn-domain: ${LIGHTSAIL_CDN_DOMAIN}
+  endpoint: ${LIGHTSAIL_ENDPOINT_URL}
 
 springdoc:
   api-docs:

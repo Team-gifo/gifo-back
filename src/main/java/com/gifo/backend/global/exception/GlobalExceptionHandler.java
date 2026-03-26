@@ -11,6 +11,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 @Slf4j
 @RestControllerAdvice
@@ -35,6 +36,15 @@ public class GlobalExceptionHandler {
         String errorMessage = e.getBindingResult().getFieldErrors().get(0).getDefaultMessage();
         return ResponseEntity.badRequest()
                 .body(ErrorResponse.fail(ErrorCode.VALIDATION_ERROR, errorMessage));
+    }
+
+    // 파일 업로드 크기 초과
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorResponse> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException ex) {
+        log.error("파일 크기 초과: {}", ex.getMessage());
+        return ResponseEntity
+                .status(ErrorCode.FILE_SIZE_EXCEEDED.getHttpStatus())
+                .body(ErrorResponse.fail(ErrorCode.FILE_SIZE_EXCEEDED));
     }
 
     // 기타 예외 처리
