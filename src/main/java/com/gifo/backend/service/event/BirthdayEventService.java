@@ -13,10 +13,10 @@ import com.gifo.backend.entity.gift.Gift;
 import com.gifo.backend.entity.quiz.*;
 import com.gifo.backend.global.ErrorCode;
 import com.gifo.backend.global.exception.event.EventException;
-import com.gifo.backend.global.exception.storage.StorageException;
 import com.gifo.backend.global.util.EntityFinder;
+import com.gifo.backend.service.bgm.BgmCleanupEvent;
 import lombok.extern.slf4j.Slf4j;
-import com.gifo.backend.service.storage.StorageService;
+import org.springframework.context.ApplicationEventPublisher;
 import com.gifo.backend.repository.capsule.CapsuleDrawRepository;
 import com.gifo.backend.repository.capsule.CapsuleEventRepository;
 import com.gifo.backend.repository.capsule.CapsuleRepository;
@@ -52,7 +52,7 @@ public class BirthdayEventService {
     private final QuizChoiceRepository quizChoiceRepository;
     private final QuizRewardRuleRepository quizRewardRuleRepository;
     private final EntityFinder entityFinder;
-    private final StorageService storageService;
+    private final ApplicationEventPublisher eventPublisher;
 
     private static final String CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private static final int CODE_LENGTH = 8;
@@ -87,26 +87,12 @@ public class BirthdayEventService {
             if (req.getContent().getUnboxing() != null) saveUnboxing(event, req.getContent().getUnboxing());
         }
 
-        deleteUnselectedBgms(req.getUploadedBgmUrls(), req.getBgm());
+        eventPublisher.publishEvent(new BgmCleanupEvent(this, req.getUploadedBgmUrls(), req.getBgm()));
 
         return BirthdayEventCreateResponse.builder()
                 .eventId(event.getEventId())
                 .eventUrl(event.getEventUrl())
                 .build();
-    }
-
-    private void deleteUnselectedBgms(List<String> uploadedBgmUrls, String selectedBgmUrl) {
-        if (uploadedBgmUrls == null || uploadedBgmUrls.isEmpty()) return;
-        uploadedBgmUrls.stream()
-                .filter(url -> !url.equals(selectedBgmUrl))
-                .forEach(url -> {
-                    try {
-                        storageService.deleteBgm(url);
-                    } catch (StorageException e) {
-                        // 삭제 실패해도 이벤트 생성 자체는 성공으로 처리
-                        log.warn("업로드된 BGM 삭제 실패: {}", url, e);
-                    }
-                });
     }
 
     // ══════════════════════════════════════════════
