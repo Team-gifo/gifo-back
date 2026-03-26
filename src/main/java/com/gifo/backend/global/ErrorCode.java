@@ -38,10 +38,13 @@ public enum ErrorCode {
 
     // 스토리지 도메인
     INVALID_FILE_TYPE(HttpStatus.BAD_REQUEST, "허용되지 않는 파일 형식입니다. JPEG, PNG만 업로드 가능합니다."),
+    INVALID_AUDIO_FILE_TYPE(HttpStatus.BAD_REQUEST, "허용되지 않는 파일 형식입니다. MP3, WAV, OGG, AAC만 업로드 가능합니다."),
     FILE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "파일 크기가 20MB를 초과합니다."),
     EMPTY_FILE(HttpStatus.BAD_REQUEST, "빈 파일은 업로드할 수 없습니다."),
     STORAGE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "파일 업로드에 실패했습니다."),
     INVALID_IMAGE_URL(HttpStatus.BAD_REQUEST, "유효하지 않은 이미지 URL입니다."),
+    INVALID_BGM_URL(HttpStatus.BAD_REQUEST, "유효하지 않은 BGM URL입니다."),
+    BGM_UPLOAD_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "BGM은 최대 3개까지 업로드할 수 있습니다."),
 
     // 외부 API 오류
     NAVER_API_ERROR(HttpStatus.BAD_GATEWAY, "네이버 쇼핑 API 호출에 실패했습니다.");

@@ -219,6 +219,50 @@ return ResponseEntity.ok(ApiResponse.success("삭제 성공"));         // 데�
 - API 문서: `http://localhost:8080/api-docs`
 - 헬스 체크: `http://localhost:8080/health`
 
+## API 명세 작성 규칙
+
+새로운 API를 추가하거나 기존 API를 변경할 때는 반드시 `docs/api-spec-open.md`에 명세를 추가/수정합니다.
+
+명세 작성 양식:
+
+```markdown
+# {도메인} API 명세서
+
+> Base URL: `{서버주소}/{base-path}`
+
+## POST /{endpoint}
+
+**설명**: 한 줄 설명
+
+**Request**
+- Content-Type: application/json (또는 multipart/form-data)
+
+| 필드 | 타입 | 필수 | 설명 |
+|------|------|------|------|
+| field_name | String | Y | 설명 |
+
+**Response**
+
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| field_name | String | 설명 |
+
+**응답 예시**
+\`\`\`json
+{
+  "code": "SUCCESS",
+  "message": "성공 메시지",
+  "data": { ... }
+}
+\`\`\`
+
+**에러 코드**
+
+| 코드 | HTTP | 설명 |
+|------|------|------|
+| ERROR_CODE | 400 | 설명 |
+```
+
 ## 커밋 메시지 컨벤션
 
 형식: `[type] 설명` (한국어 설명)

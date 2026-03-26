@@ -13,7 +13,9 @@ import com.gifo.backend.entity.gift.Gift;
 import com.gifo.backend.entity.quiz.*;
 import com.gifo.backend.global.ErrorCode;
 import com.gifo.backend.global.exception.event.EventException;
+import com.gifo.backend.global.exception.storage.StorageException;
 import com.gifo.backend.global.util.EntityFinder;
+import com.gifo.backend.service.storage.StorageService;
 import com.gifo.backend.repository.capsule.CapsuleDrawRepository;
 import com.gifo.backend.repository.capsule.CapsuleEventRepository;
 import com.gifo.backend.repository.capsule.CapsuleRepository;
@@ -48,6 +50,7 @@ public class BirthdayEventService {
     private final QuizChoiceRepository quizChoiceRepository;
     private final QuizRewardRuleRepository quizRewardRuleRepository;
     private final EntityFinder entityFinder;
+    private final StorageService storageService;
 
     private static final String CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private static final int CODE_LENGTH = 8;
@@ -55,6 +58,10 @@ public class BirthdayEventService {
     private static final SecureRandom RANDOM = new SecureRandom();
 
     public BirthdayEventCreateResponse createEvent(BirthdayEventCreateRequest req) {
+
+        if (req.getUploadedBgmUrls() != null && req.getUploadedBgmUrls().size() > 3) {
+            throw new StorageException(ErrorCode.BGM_UPLOAD_LIMIT_EXCEEDED);
+        }
 
         BirthdayEvent event = birthdayEventRepository.save(
                 BirthdayEvent.builder()
@@ -78,10 +85,25 @@ public class BirthdayEventService {
             if (req.getContent().getUnboxing() != null) saveUnboxing(event, req.getContent().getUnboxing());
         }
 
+        deleteUnselectedBgms(req.getUploadedBgmUrls(), req.getBgm());
+
         return BirthdayEventCreateResponse.builder()
                 .eventId(event.getEventId())
                 .eventUrl(event.getEventUrl())
                 .build();
+    }
+
+    private void deleteUnselectedBgms(List<String> uploadedBgmUrls, String selectedBgmUrl) {
+        if (uploadedBgmUrls == null || uploadedBgmUrls.isEmpty()) return;
+        uploadedBgmUrls.stream()
+                .filter(url -> !url.equals(selectedBgmUrl))
+                .forEach(url -> {
+                    try {
+                        storageService.deleteBgm(url);
+                    } catch (StorageException ignored) {
+                        // 삭제 실패해도 이벤트 생성 자체는 성공으로 처리
+                    }
+                });
     }
 
     // ══════════════════════════════════════════════
