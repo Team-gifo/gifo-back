@@ -13,7 +13,9 @@ public class WebConfig implements WebMvcConfigurer {
                 .allowedOrigins(
                         "http://43.203.63.240",
                         "http://localhost:8080",
-                        "http://localhost:3000"
+                        "http://localhost:3000",
+                        "https://gifo.co.kr",
+                        "https://www.gifo.co.kr"
                 )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
                 .allowedHeaders("*")
