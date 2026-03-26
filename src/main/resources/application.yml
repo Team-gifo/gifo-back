@@ -34,6 +34,7 @@ storage:
   bucket-name: ${LIGHTSAIL_BUCKET_NAME}
   region: ${LIGHTSAIL_BUCKET_REGION}
   cdn-domain: ${LIGHTSAIL_CDN_DOMAIN}
+  endpoint: ${LIGHTSAIL_ENDPOINT_URL}
 
 springdoc:
   api-docs:

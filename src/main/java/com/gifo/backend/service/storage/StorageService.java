@@ -1,5 +1,6 @@
 package com.gifo.backend.service.storage;
 
+import com.gifo.backend.dto.storage.ImageType;
 import com.gifo.backend.global.ErrorCode;
 import com.gifo.backend.global.exception.storage.StorageException;
 import lombok.RequiredArgsConstructor;
@@ -103,19 +104,4 @@ public class StorageService {
         return filename.substring(filename.lastIndexOf(".")).toLowerCase();
     }
 
-    public enum ImageType {
-        MEMORY("memories/"),
-        GIFT("gifts/"),
-        QUIZ("quizzes/");
-
-        private final String prefix;
-
-        ImageType(String prefix) {
-            this.prefix = prefix;
-        }
-
-        public String getPrefix() {
-            return prefix;
-        }
-    }
 }

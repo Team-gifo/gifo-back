@@ -1,5 +1,6 @@
 package com.gifo.backend.controller.storage;
 
+import com.gifo.backend.dto.storage.ImageType;
 import com.gifo.backend.dto.storage.ImageUploadResponse;
 import com.gifo.backend.global.ApiResponse;
 import com.gifo.backend.service.storage.StorageService;
@@ -26,7 +27,7 @@ public class StorageController {
     @Operation(summary = "이미지 업로드", description = "이미지를 업로드하고 CDN URL을 반환합니다. type: MEMORY, GIFT, QUIZ")
     public ResponseEntity<ApiResponse<ImageUploadResponse>> uploadImage(
             @RequestParam("file") MultipartFile file,
-            @RequestParam("type") StorageService.ImageType type
+            @RequestParam("type") ImageType type
     ) {
         String imageUrl = storageService.upload(file, type);
         return ResponseEntity.ok(ApiResponse.success("이미지 업로드 성공", new ImageUploadResponse(imageUrl)));
