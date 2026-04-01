@@ -16,11 +16,13 @@ public class QuizResponse {
 
     /**
      * POST /events/{eventUrl}/quiz/answer 응답
-     * 문제별 결과 저장 확인 + 다음 문제 인덱스
+     * 서버 채점 결과 + 남은 시도 횟수
+     * remainingAttempts=0이면 해당 문제 종료 (정답이든 횟수 소진이든)
      */
     public record Answer(
             Long quizId,
             boolean correct,
+            int remainingAttempts,
             int currentQuizIndex
     ) {}
 }

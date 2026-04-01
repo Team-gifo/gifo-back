@@ -13,3 +13,12 @@ spring:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
       ddl-auto: update
+
+# TODO: StorageConfig가 @Value로 주입받는 값들 — 테스트에서 S3 실사용 안 하므로 더미값
+storage:
+  access-key-id: test
+  secret-access-key: test
+  bucket-name: test-bucket
+  region: ap-northeast-2
+  cdn-domain: https://test-cdn.example.com
+  endpoint: https://test-endpoint.example.com

@@ -117,7 +117,7 @@ public class EventResponse {
      * 퀴즈 문항 1개
      * type: "multiple_choice" | "ox" | "text" (프론트 매핑용)
      * options: 선택지 목록 (주관식은 빈 리스트)
-     * answer: 정답 목록
+     * 정답은 서버에서 채점하므로 클라이언트에 노출하지 않음
      */
     public record QuizItem(
             Long quizId,
@@ -127,7 +127,6 @@ public class EventResponse {
             String description,
             String hint,
             List<String> options,
-            List<String> answer,
             int playLimit
     ) {}
 

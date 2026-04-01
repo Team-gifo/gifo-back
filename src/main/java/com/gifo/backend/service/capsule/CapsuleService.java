@@ -52,11 +52,6 @@ public class CapsuleService {
             throw new CapsuleException(ErrorCode.CAPSULE_NOT_FOUND);
         }
 
-        // 이미 선택 완료된 경우 뽑기 불가
-        if (capsuleDrawRepository.existsByCapsuleEventAndSelectedTrue(capsuleEvent)) {
-            throw new CapsuleException(ErrorCode.CAPSULE_ALREADY_SELECTED);
-        }
-
         // 뽑기 횟수 초과 검증
         long drawCount = capsuleDrawRepository.countByCapsuleEvent(capsuleEvent);
         if (drawCount >= capsuleEvent.getMaxDrawCount()) {
