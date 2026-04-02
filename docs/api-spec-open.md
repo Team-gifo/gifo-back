@@ -108,11 +108,11 @@ Content-Type: multipart/form-data
 | `CAPSULE_DRAW_LIMIT_EXCEEDED` | 400 | 뽑기 횟수 초과 |
 | `CAPSULE_ALL_DRAWN` | 400 | 모든 캡슐을 이미 뽑음 |
 | `CAPSULE_DRAW_NOT_FOUND` | 404 | 해당 캡슐 뽑기 이력을 찾을 수 없음 |
-| `CAPSULE_ALREADY_SELECTED` | 400 | 이미 캡슐을 선택함 |
 | `QUIZ_NOT_FOUND` | 404 | 퀴즈 이벤트가 없음 |
 | `QUIZ_ALREADY_ANSWERED` | 400 | 이미 답변한 문제 |
-| `QUIZ_ALL_ANSWERED` | 400 | 모든 문제를 이미 풀었음 |
+| `QUIZ_NOT_ALL_ANSWERED` | 400 | 모든 문제를 아직 풀지 않음 |
 | `QUIZ_QUESTION_NOT_FOUND` | 404 | 해당 퀴즈 문제를 찾을 수 없음 |
+| `QUIZ_NO_ATTEMPTS_LEFT` | 400 | 시도 횟수 소진 |
 | `INVALID_ARGUMENT` | 400 | 잘못된 요청 |
 
 ---
@@ -215,7 +215,7 @@ GET /events/{eventUrl}
 |------|------|------|
 | `playCount` | int | 총 뽑기 횟수 (이벤트 생성 시 설정) |
 | `remainingDrawCount` | int | 남은 뽑기 횟수 |
-| `selected` | boolean | 선택 완료 여부 (`true`면 뽑기 불가, 선택 변경은 가능) |
+| `selected` | boolean | 선택 완료 여부 (선택 후에도 뽑기 가능, 선택 변경도 가능) |
 | `list` | Array | 남은 캡슐 목록 (이미 뽑힌 캡슐은 제외됨) |
 | `list[].itemName` | String | 선물 이름 |
 | `list[].imageUrl` | String | 선물 이미지 URL |
@@ -257,7 +257,6 @@ GET /events/{eventUrl}
         "description": null,
         "hint": "어제 저녁에도 먹었어요!",
         "options": ["치킨", "마라탕", "초밥", "삼겹살", "파스타"],
-        "answer": ["치킨"],
         "playLimit": 3
       },
       {
@@ -268,7 +267,6 @@ GET /events/{eventUrl}
         "description": null,
         "hint": "반려동물이 있긴 해요",
         "options": ["O", "X"],
-        "answer": ["O"],
         "playLimit": 2
       },
       {
@@ -279,7 +277,6 @@ GET /events/{eventUrl}
         "description": null,
         "hint": "강남역 근처의 유명한 카페 브랜드입니다.",
         "options": [],
-        "answer": ["스타벅스", "스벅"],
         "playLimit": 3
       }
     ],
@@ -308,19 +305,20 @@ GET /events/{eventUrl}
 | `list[].description` | String | 문제 설명 (없으면 `null`) |
 | `list[].hint` | String | 힌트 텍스트 |
 | `list[].options` | Array\<String\> | 선택지 목록 (`text` 타입은 빈 배열) |
-| `list[].answer` | Array\<String\> | 정답 목록 (주관식은 허용 답안 여러 개 가능) |
 | `list[].playLimit` | int | 문항별 시도 제한 횟수 |
 | `answerHistory` | Array | 이미 푼 문제의 정답/오답 기록 (재접속 시 복원용) |
 | `answerHistory[].quizId` | Long | 문제 PK |
 | `answerHistory[].correct` | boolean | 정답 여부 |
 
-**퀴즈 채점 플로우 (프론트에서 처리):**
+**퀴즈 채점 플로우 (서버에서 처리):**
 1. `currentQuizIndex`에 해당하는 문제를 표시
 2. `remainingAttempts`가 있으면 해당 횟수부터 이어서 시도, `null`이면 `playLimit`부터 시작
-3. `answer` 배열과 대소문자 무시 비교로 정답 판별
-4. 정답 → `POST /quiz/answer { quizId, correct: true, remainingAttempts: 0 }` → 다음 문항으로
-5. 오답 → 남은 기회 차감, 0이면 `POST /quiz/answer { quizId, correct: false, remainingAttempts: 0 }` → 다음 문항으로
+3. 사용자가 답안을 선택/입력하면 `POST /quiz/answer { quizId, selectedAnswer }` 호출
+4. 서버가 채점 → 정답이면 `correct: true, remainingAttempts: 0` 반환, 다음 문항으로
+5. 오답이면 서버가 `remainingAttempts` 차감 → 0이면 해당 문항 종료(correct: false), 다음 문항으로
 6. 모든 문항 완료 → `POST /quiz/result` → 서버가 정답 수 계산하여 성공/실패 보상 반환
+
+> **참고:** 정답은 서버에서만 보유하며 클라이언트에 노출하지 않습니다.
 
 ---
 
@@ -399,7 +397,6 @@ POST /events/{eventUrl}/capsules/draw
 | 뽑기 횟수 초과 | `CAPSULE_DRAW_LIMIT_EXCEEDED` | 400 |
 | 모든 캡슐 소진 | `CAPSULE_ALL_DRAWN` | 400 |
 | 캡슐 이벤트 없음 | `CAPSULE_NOT_FOUND` | 404 |
-| 이미 선택 완료 | `CAPSULE_ALREADY_SELECTED` | 400 |
 
 ### 참고
 
@@ -407,6 +404,7 @@ POST /events/{eventUrl}/capsules/draw
 - 재접속 시에는 `GET /events/{eventUrl}`의 `drawHistory`에서 복원합니다.
 - 뽑기 후 다시 `GET /events/{eventUrl}`을 호출하면 `remainingDrawCount`가 감소하고, 뽑힌 캡슐은 `list`에서 제거됩니다.
 - 남은 캡슐의 확률(`percent`)은 자동으로 재계산됩니다.
+- **선택(select) 후에도 남은 횟수가 있으면 뽑기를 계속할 수 있습니다.**
 
 ---
 
@@ -466,9 +464,12 @@ POST /events/{eventUrl}/capsules/select
 
 ---
 
-## 4. 퀴즈 문제별 결과 저장
+## 4. 퀴즈 답안 제출 (서버 채점)
 
-문제 1개의 풀이 결과(정답/오답)를 저장합니다. 정답을 맞추거나 playLimit을 소진했을 때 호출합니다.
+매 시도마다 호출합니다. 서버가 채점하고 `remainingAttempts`를 관리합니다.
+- 정답 → `QuizAnswer` 저장 + 다음 문제로
+- 오답 + 횟수 남음 → `remainingAttempts` 차감
+- 오답 + 횟수 소진 → `QuizAnswer(correct=false)` 저장 + 다음 문제로
 
 ### Request
 
@@ -485,26 +486,25 @@ POST /events/{eventUrl}/quiz/answer
 ```json
 {
   "quizId": 1,
-  "correct": true,
-  "remainingAttempts": 0
+  "selectedAnswer": "치킨"
 }
 ```
 
 | 필드 | 타입 | 필수 | 설명 |
 |------|------|------|------|
 | `quizId` | Long | O | 문제 PK |
-| `correct` | boolean | O | 정답 여부 |
-| `remainingAttempts` | int | O | 현재 문제의 남은 시도 횟수 (재접속 시 이어하기용, 완료 시 0) |
+| `selectedAnswer` | String | O | 사용자가 선택/입력한 답안 |
 
 ### Response (200 OK)
 
 ```json
 {
   "code": "SUCCESS",
-  "message": "문제 결과 저장 성공",
+  "message": "답안 제출 성공",
   "data": {
     "quizId": 1,
     "correct": true,
+    "remainingAttempts": 0,
     "currentQuizIndex": 1
   }
 }
@@ -512,25 +512,26 @@ POST /events/{eventUrl}/quiz/answer
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
-| `quizId` | Long | 저장된 문제 PK |
-| `correct` | boolean | 정답 여부 |
-| `currentQuizIndex` | int | 다음에 풀어야 할 문제 인덱스 |
+| `quizId` | Long | 제출한 문제 PK |
+| `correct` | boolean | 서버 채점 결과 |
+| `remainingAttempts` | int | 남은 시도 횟수 (0이면 해당 문제 종료 — 정답이든 횟수 소진이든) |
+| `currentQuizIndex` | int | 다음에 풀어야 할 문제 인덱스 (`remainingAttempts > 0`이면 현재 문제 유지) |
 
 ### 에러 케이스
 
 | 상황 | 에러 코드 | HTTP |
 |------|----------|------|
 | 이미 답변한 문제 | `QUIZ_ALREADY_ANSWERED` | 400 |
+| 시도 횟수 소진 | `QUIZ_NO_ATTEMPTS_LEFT` | 400 |
 | 퀴즈 이벤트 없음 | `QUIZ_NOT_FOUND` | 404 |
 | 문제가 없음 | `QUIZ_QUESTION_NOT_FOUND` | 404 |
-| quizId 누락 | `VALIDATION_ERROR` | 400 |
-| remainingAttempts 음수 | `INVALID_ARGUMENT` | 400 |
+| quizId/selectedAnswer 누락 | `VALIDATION_ERROR` | 400 |
 
 ### 참고
 
-- 프론트에서 채점 후 정답/오답 결과만 서버에 전송합니다.
-- 재접속 시 `GET /events/{eventUrl}`의 `answerHistory`로 풀이 기록이 복원됩니다.
-- `remainingAttempts`는 문제 풀다가 중간에 나갔을 때 이어하기용으로 저장됩니다.
+- 서버가 `selectedAnswer`와 DB의 정답을 대소문자 무시 + trim 비교로 채점합니다.
+- `remainingAttempts`는 서버가 관리합니다. 첫 시도 시 `playLimit`으로 초기화됩니다.
+- 재접속 시 `GET /events/{eventUrl}`의 `remainingAttempts`로 중간 상태가 복원됩니다.
 
 ---
 
@@ -745,12 +746,14 @@ Content-Type: multipart/form-data
 2-A. 캡슐 뽑기 플로우
    → POST /events/{eventUrl}/capsules/draw (1회 뽑기)
    → 결과를 프론트 로컬 히스토리에 push, 오른쪽에 "~~를 뽑았습니다" 표시
-   → 남은 횟수만큼 반복 또는 원하는 선물이 나오면 중단
-   → POST /events/{eventUrl}/capsules/select로 최종 선물 선택 (이미 선택한 경우에도 변경 가능)
+   → POST /events/{eventUrl}/capsules/select로 선물 선택 (언제든 변경 가능)
+   → 선택 후에도 남은 횟수가 있으면 계속 뽑기 가능
+   → 뽑기와 선택을 자유롭게 반복 (선택이 뽑기를 차단하지 않음)
 
 2-B. 퀴즈 플로우
-   → 프론트에서 문항별 채점 (answer 비교, playLimit 재시도)
-   → 정답 또는 playLimit 소진 시 POST /events/{eventUrl}/quiz/answer
+   → 매 시도마다 POST /events/{eventUrl}/quiz/answer { quizId, selectedAnswer }
+   → 서버가 채점 + remainingAttempts 관리
+   → 정답 또는 playLimit 소진 시 자동으로 다음 문항 이동
    → 모든 문항 완료 후 POST /events/{eventUrl}/quiz/result
    → 서버가 정답 수 계산 → 성공/실패 보상 반환
 
