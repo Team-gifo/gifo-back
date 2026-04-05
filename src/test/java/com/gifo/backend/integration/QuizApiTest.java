@@ -190,9 +190,7 @@ class QuizApiTest {
                 .andExpect(jsonPath("$.data.content.quiz.currentQuizIndex").value(3))
                 .andExpect(jsonPath("$.data.content.quiz.answerHistory.length()").value(3));
 
-        mockMvc.perform(post("/events/{eventUrl}/quiz/result", eventUrl)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"correctCount\":3}"))
+        mockMvc.perform(post("/events/{eventUrl}/quiz/result", eventUrl))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.correctCount").value(3))
@@ -223,9 +221,7 @@ class QuizApiTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"quizId\":" + quiz3Id + ",\"selectedAnswer\":\"이디야\"}"));
 
-        mockMvc.perform(post("/events/{eventUrl}/quiz/result", eventUrl)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"correctCount\":1}"))
+        mockMvc.perform(post("/events/{eventUrl}/quiz/result", eventUrl))
                 .andDo(print())
                 .andExpect(jsonPath("$.data.correctCount").value(1))
                 .andExpect(jsonPath("$.data.success").value(false));
@@ -255,9 +251,7 @@ class QuizApiTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"quizId\":" + quiz1Id + ",\"selectedAnswer\":\"치킨\"}"));
 
-        mockMvc.perform(post("/events/{eventUrl}/quiz/result", eventUrl)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"correctCount\":1}"))
+        mockMvc.perform(post("/events/{eventUrl}/quiz/result", eventUrl))
                 .andDo(print())
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("QUIZ_NOT_ALL_ANSWERED"));

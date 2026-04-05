@@ -278,9 +278,7 @@ class EdgeCaseTest {
                 .andExpect(jsonPath("$.data.remainingAttempts").value(0));
 
         // result 호출
-        mockMvc.perform(post("/events/EDGE_RST1/quiz/result")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"correctCount\":0}"))
+        mockMvc.perform(post("/events/EDGE_RST1/quiz/result"))
                 .andExpect(jsonPath("$.data.correctCount").value(0))
                 .andExpect(jsonPath("$.data.success").value(false));
 
@@ -304,9 +302,7 @@ class EdgeCaseTest {
                 .andExpect(jsonPath("$.data.currentQuizIndex").value(1));
 
         // 2차 result → 성공
-        mockMvc.perform(post("/events/EDGE_RST1/quiz/result")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"correctCount\":1}"))
+        mockMvc.perform(post("/events/EDGE_RST1/quiz/result"))
                 .andExpect(jsonPath("$.data.correctCount").value(1))
                 .andExpect(jsonPath("$.data.success").value(true));
     }

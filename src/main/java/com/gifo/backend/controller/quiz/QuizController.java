@@ -34,16 +34,16 @@ public class QuizController {
     }
 
     /**
-     * POST /events/{eventUrl}/quiz/result - 퀴즈 최종 결과 저장
+     * POST /events/{eventUrl}/quiz/result - 퀴즈 최종 결과 조회
      * 모든 문제 완료 후 서버가 DB에서 정답 수를 계산하여 보상 판정
+     * Body 없음 — 서버가 quiz_answer 테이블에서 직접 계산
      */
     @PostMapping("/{eventUrl}/quiz/result")
-    @Operation(summary = "퀴즈 결과 저장", description = "모든 문제 완료 후 최종 보상을 판정합니다.")
-    public ResponseEntity<ApiResponse<QuizResponse.Result>> saveResult(
-            @PathVariable String eventUrl,
-            @Valid @RequestBody QuizRequest.Result request) {
+    @Operation(summary = "퀴즈 결과 조회", description = "모든 문제 완료 후 최종 보상을 판정합니다.")
+    public ResponseEntity<ApiResponse<QuizResponse.Result>> getResult(
+            @PathVariable String eventUrl) {
 
-        QuizResponse.Result response = quizService.saveResult(eventUrl, request);
-        return ResponseEntity.ok(ApiResponse.success("퀴즈 결과 저장 성공", response));
+        QuizResponse.Result response = quizService.getResult(eventUrl);
+        return ResponseEntity.ok(ApiResponse.success("퀴즈 결과 조회 성공", response));
     }
 }

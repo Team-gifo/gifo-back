@@ -535,7 +535,7 @@ POST /events/{eventUrl}/quiz/answer
 
 ---
 
-## 5. 퀴즈 최종 결과 저장
+## 5. 퀴즈 최종 결과 조회
 
 모든 문제를 풀고 나서 최종 보상을 판정합니다. 서버가 DB에서 정답 수를 직접 계산합니다.
 
@@ -549,24 +549,14 @@ POST /events/{eventUrl}/quiz/result
 |---------|------|------|------|
 | `eventUrl` | path | String | 이벤트 고유 URL |
 
-**Body:**
-
-```json
-{
-  "correctCount": 2
-}
-```
-
-| 필드 | 타입 | 필수 | 설명 |
-|------|------|------|------|
-| `correctCount` | int | O | 프론트에서 채점한 정답 수 (서버 검증용 참고값, 실제 판정은 서버 DB 기준) |
+> **Body 없음** — 서버가 `quiz_answer` 테이블에서 정답 수를 직접 계산합니다.
 
 ### Response (200 OK)
 
 ```json
 {
   "code": "SUCCESS",
-  "message": "퀴즈 결과 저장 성공",
+  "message": "퀴즈 결과 조회 성공",
   "data": {
     "correctCount": 2,
     "success": true
@@ -578,6 +568,14 @@ POST /events/{eventUrl}/quiz/result
 |------|------|------|
 | `correctCount` | int | 서버가 계산한 정답 수 |
 | `success` | boolean | 성공 여부 (`correctCount >= requiredCount`) |
+
+### 에러 케이스
+
+| 상황 | 에러 코드 | HTTP |
+|------|----------|------|
+| 모든 문제 미완료 | `QUIZ_NOT_ALL_ANSWERED` | 400 |
+| 퀴즈 이벤트 없음 | `QUIZ_NOT_FOUND` | 404 |
+| 이벤트 없음 | `EVENT_NOT_FOUND` | 404 |
 
 ---
 
