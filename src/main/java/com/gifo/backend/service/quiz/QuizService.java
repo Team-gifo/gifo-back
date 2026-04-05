@@ -3,26 +3,26 @@ package com.gifo.backend.service.quiz;
 import com.gifo.backend.dto.quiz.QuizRequest;
 import com.gifo.backend.dto.quiz.QuizResponse;
 import com.gifo.backend.entity.event.BirthdayEvent;
-import com.gifo.backend.entity.quiz.Quiz;
-import com.gifo.backend.entity.quiz.QuizAnswer;
-import com.gifo.backend.entity.quiz.QuizEvent;
+import com.gifo.backend.entity.quiz.*;
 import com.gifo.backend.global.ErrorCode;
 import com.gifo.backend.global.exception.quiz.QuizException;
 import com.gifo.backend.global.util.EntityFinder;
-import com.gifo.backend.repository.quiz.QuizAnswerRepository;
-import com.gifo.backend.repository.quiz.QuizEventRepository;
-import com.gifo.backend.repository.quiz.QuizRepository;
-import com.gifo.backend.repository.quiz.QuizRewardRuleRepository;
+import com.gifo.backend.repository.quiz.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 /**
  * 퀴즈 비즈니스 로직
  *
- * 1. POST /events/{eventUrl}/quiz/answer — 문제별 결과 저장
- *    정답을 맞추거나 playLimit 소진 시 호출 → QuizAnswer 저장 + remainingAttempts 관리
+ * 1. POST /events/{eventUrl}/quiz/answer — 매 시도마다 호출
+ *    서버가 채점 + remainingAttempts 관리
+ *    - 정답 → QuizAnswer 저장 + 다음 문제로
+ *    - 오답 + 횟수 남음 → remainingAttempts 차감
+ *    - 오답 + 횟수 소진 → QuizAnswer(correct=false) 저장 + 다음 문제로
  *
  * 2. POST /events/{eventUrl}/quiz/result — 최종 보상 판정
  *    모든 문제 완료 후 호출 → 서버가 DB에서 정답 수 계산 → 성공/실패 보상 반환
@@ -37,22 +37,13 @@ public class QuizService {
     private final QuizEventRepository quizEventRepository;
     private final QuizAnswerRepository quizAnswerRepository;
     private final QuizRewardRuleRepository quizRewardRuleRepository;
+    private final QuizChoiceRepository quizChoiceRepository;
 
     /**
-     * 문제별 결과 저장 + 남은 시도 횟수 업데이트 (단일 트랜잭션)
-     * 컨트롤러에서 이 메서드를 호출하면 remainingAttempts 업데이트와 답변 저장이
-     * 같은 트랜잭션에서 실행되어 부분 커밋 문제를 방지합니다.
+     * 답안 제출 (매 시도마다 호출)
+     * 서버가 채점하고 remainingAttempts를 관리합니다.
      */
-    public QuizResponse.Answer saveAnswerWithAttempts(String eventUrl, QuizRequest.Answer request) {
-        updateRemainingAttempts(eventUrl, request.remainingAttempts());
-        return saveAnswer(eventUrl, request);
-    }
-
-    /**
-     * 문제별 결과 저장
-     * 프론트에서 정답을 맞추거나 playLimit을 소진했을 때 호출
-     */
-    public QuizResponse.Answer saveAnswer(String eventUrl, QuizRequest.Answer request) {
+    public QuizResponse.Answer submitAnswer(String eventUrl, QuizRequest.Answer request) {
         BirthdayEvent event = entityFinder.getEventByUrlOrThrow(eventUrl);
 
         QuizEvent quizEvent = event.getQuizEvent();
@@ -64,28 +55,84 @@ public class QuizService {
         Quiz quiz = quizRepository.findByQuizEventAndQuizId(quizEvent, request.quizId())
                 .orElseThrow(() -> new QuizException(ErrorCode.QUIZ_QUESTION_NOT_FOUND));
 
-        // 이미 답변한 문제인지 검증
+        // 이미 답변 완료된 문제인지 검증
         if (quizAnswerRepository.existsByQuizEventAndQuiz(quizEvent, quiz)) {
             throw new QuizException(ErrorCode.QUIZ_ALREADY_ANSWERED);
         }
 
-        // QuizAnswer 저장 (unique constraint 위반 시 비즈니스 예외로 변환)
+        // remainingAttempts 초기화 (첫 시도 시 playLimit으로 세팅)
+        Integer remaining = quizEvent.getCurrentQuizRemainingAttempts();
+        if (remaining == null) {
+            remaining = quiz.getPlayLimit();
+        }
+
+        // 시도 횟수 소진 검증
+        if (remaining <= 0) {
+            throw new QuizException(ErrorCode.QUIZ_NO_ATTEMPTS_LEFT);
+        }
+
+        // 서버 채점: selectedAnswer와 DB 정답 비교
+        boolean correct = gradeAnswer(quiz, request.selectedAnswer());
+
+        if (correct) {
+            // 정답 → QuizAnswer 저장 + remainingAttempts 초기화
+            saveQuizAnswer(quizEvent, quiz, true);
+            quizEvent.setCurrentQuizRemainingAttempts(null);
+
+            int currentQuizIndex = (int) quizAnswerRepository.countByQuizEvent(quizEvent);
+            return new QuizResponse.Answer(request.quizId(), true, 0, currentQuizIndex);
+        } else {
+            // 오답 → 횟수 차감
+            remaining -= 1;
+
+            if (remaining <= 0) {
+                // 횟수 소진 → QuizAnswer(correct=false) 저장 + remainingAttempts 초기화
+                saveQuizAnswer(quizEvent, quiz, false);
+                quizEvent.setCurrentQuizRemainingAttempts(null);
+
+                int currentQuizIndex = (int) quizAnswerRepository.countByQuizEvent(quizEvent);
+                return new QuizResponse.Answer(request.quizId(), false, 0, currentQuizIndex);
+            } else {
+                // 아직 기회 남음 → remainingAttempts만 업데이트
+                quizEvent.setCurrentQuizRemainingAttempts(remaining);
+
+                int currentQuizIndex = (int) quizAnswerRepository.countByQuizEvent(quizEvent);
+                return new QuizResponse.Answer(request.quizId(), false, remaining, currentQuizIndex);
+            }
+        }
+    }
+
+    /**
+     * 서버 채점: 퀴즈 타입별 정답 비교
+     * - OBJECTIVE / OX: isCorrect=true인 QuizChoice의 choiceText와 비교
+     * - SUBJECTIVE: 모든 QuizChoice(허용 답안)와 대소문자 무시 + trim 비교
+     */
+    private boolean gradeAnswer(Quiz quiz, String selectedAnswer) {
+        String trimmed = selectedAnswer.trim();
+        List<QuizChoice> choices = quizChoiceRepository.findByQuiz(quiz);
+
+        return switch (quiz.getQuizType()) {
+            case OBJECTIVE, OX -> choices.stream()
+                    .filter(QuizChoice::getIsCorrect)
+                    .anyMatch(c -> c.getChoiceText().trim().equalsIgnoreCase(trimmed));
+            case SUBJECTIVE -> choices.stream()
+                    .anyMatch(c -> c.getChoiceText().trim().equalsIgnoreCase(trimmed));
+        };
+    }
+
+    /**
+     * QuizAnswer 저장 (unique constraint 위반 시 비즈니스 예외로 변환)
+     */
+    private void saveQuizAnswer(QuizEvent quizEvent, Quiz quiz, boolean correct) {
         try {
             quizAnswerRepository.saveAndFlush(QuizAnswer.builder()
                     .quizEvent(quizEvent)
                     .quiz(quiz)
-                    .correct(request.correct())
+                    .correct(correct)
                     .build());
         } catch (DataIntegrityViolationException e) {
             throw new QuizException(ErrorCode.QUIZ_ALREADY_ANSWERED);
         }
-
-        // 문제가 완료되었으므로 remainingAttempts null로 초기화
-        quizEvent.setCurrentQuizRemainingAttempts(null);
-
-        int currentQuizIndex = (int) quizAnswerRepository.countByQuizEvent(quizEvent);
-
-        return new QuizResponse.Answer(request.quizId(), request.correct(), currentQuizIndex);
     }
 
     /**
@@ -124,24 +171,5 @@ public class QuizService {
         quizEvent.setLastSuccess(success);
 
         return new QuizResponse.Result(correctCount, success);
-    }
-
-    /**
-     * 현재 풀고 있는 문제의 남은 시도 횟수 업데이트
-     * 프론트에서 오답 시도할 때마다 호출하여 재접속 시 이어하기용으로 저장
-     */
-    public void updateRemainingAttempts(String eventUrl, int remainingAttempts) {
-        if (remainingAttempts < 0) {
-            throw new QuizException(ErrorCode.INVALID_ARGUMENT);
-        }
-
-        BirthdayEvent event = entityFinder.getEventByUrlOrThrow(eventUrl);
-
-        QuizEvent quizEvent = event.getQuizEvent();
-        if (quizEvent == null) {
-            throw new QuizException(ErrorCode.QUIZ_NOT_FOUND);
-        }
-
-        quizEvent.setCurrentQuizRemainingAttempts(remainingAttempts);
     }
 }

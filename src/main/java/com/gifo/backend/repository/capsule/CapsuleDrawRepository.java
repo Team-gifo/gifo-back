@@ -28,7 +28,5 @@ public interface CapsuleDrawRepository extends JpaRepository<CapsuleDraw, Long> 
 
     List<CapsuleDraw> findByCapsuleEventAndSelectedTrue(CapsuleEvent capsuleEvent);
 
-    boolean existsByCapsuleEventAndSelectedTrue(CapsuleEvent capsuleEvent);
-
     void deleteByCapsuleEvent(CapsuleEvent capsuleEvent);
 }

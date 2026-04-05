@@ -229,32 +229,15 @@ public class BirthdayEventService {
                 successReward, failReward, quizItems, answerHistory);
     }
 
-    // 퀴즈 문항 빌드: 타입별 선택지 + 정답 구성
-    // OBJECTIVE: 모든 선택지 + 정답 표시
-    // OX: "O","X" 선택지 + 정답 표시
-    // SUBJECTIVE: 빈 선택지 + 정답 텍스트 목록
+    // 퀴즈 문항 빌드: 타입별 선택지 구성 (정답은 서버 채점이므로 미노출)
     private EventResponse.QuizItem buildQuizItem(Quiz quiz) {
         List<QuizChoice> choices = quiz.getQuizChoices();
 
-        List<String> options;
-        List<String> answers;
-
-        switch (quiz.getQuizType()) {
-            case OBJECTIVE -> {
-                options = choices.stream().map(QuizChoice::getChoiceText).toList();
-                answers = choices.stream().filter(QuizChoice::getIsCorrect)
-                        .map(QuizChoice::getChoiceText).toList();
-            }
-            case OX -> {
-                options = List.of("O", "X");
-                answers = choices.stream().filter(QuizChoice::getIsCorrect)
-                        .map(QuizChoice::getChoiceText).toList();
-            }
-            default -> { // SUBJECTIVE
-                options = List.of();
-                answers = choices.stream().map(QuizChoice::getChoiceText).toList();
-            }
-        }
+        List<String> options = switch (quiz.getQuizType()) {
+            case OBJECTIVE -> choices.stream().map(QuizChoice::getChoiceText).toList();
+            case OX -> List.of("O", "X");
+            case SUBJECTIVE -> List.of();
+        };
 
         return new EventResponse.QuizItem(
                 quiz.getQuizId(),
@@ -264,7 +247,6 @@ public class BirthdayEventService {
                 quiz.getDescription(),
                 quiz.getHint(),
                 options,
-                answers,
                 quiz.getPlayLimit()
         );
     }

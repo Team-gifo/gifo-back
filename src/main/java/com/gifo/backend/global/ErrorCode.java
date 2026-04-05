@@ -33,7 +33,6 @@ public enum ErrorCode {
     CAPSULE_DRAW_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "뽑기 가능 횟수를 초과했습니다."),
     CAPSULE_ALL_DRAWN(HttpStatus.BAD_REQUEST, "모든 캡슐을 이미 뽑았습니다."),
     CAPSULE_DRAW_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 캡슐 뽑기 이력을 찾을 수 없습니다."),
-    CAPSULE_ALREADY_SELECTED(HttpStatus.BAD_REQUEST, "이미 캡슐을 선택했습니다."),
 
     // 퀴즈 도메인
     QUIZ_NOT_FOUND(HttpStatus.NOT_FOUND, "퀴즈 이벤트를 찾을 수 없습니다."),
@@ -41,6 +40,7 @@ public enum ErrorCode {
     QUIZ_ALL_ANSWERED(HttpStatus.BAD_REQUEST, "모든 문제를 이미 풀었습니다."),
     QUIZ_QUESTION_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 퀴즈 문제를 찾을 수 없습니다."),
     QUIZ_NOT_ALL_ANSWERED(HttpStatus.BAD_REQUEST, "모든 문제를 풀어야 결과를 확인할 수 있습니다."),
+    QUIZ_NO_ATTEMPTS_LEFT(HttpStatus.BAD_REQUEST, "시도 횟수를 모두 소진했습니다."),
 
     // 스토리지 도메인
     INVALID_FILE_TYPE(HttpStatus.BAD_REQUEST, "허용되지 않는 파일 형식입니다. JPEG, PNG만 업로드 가능합니다."),
