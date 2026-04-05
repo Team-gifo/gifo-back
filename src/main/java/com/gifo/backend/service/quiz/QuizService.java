@@ -136,10 +136,10 @@ public class QuizService {
     }
 
     /**
-     * 최종 보상 판정
+     * 퀴즈 최종 결과 조회
      * 모든 문제 완료 후 서버가 DB에서 정답 수를 계산하여 보상 결정
      */
-    public QuizResponse.Result saveResult(String eventUrl, QuizRequest.Result request) {
+    public QuizResponse.Result getResult(String eventUrl) {
         BirthdayEvent event = entityFinder.getEventByUrlOrThrow(eventUrl);
 
         QuizEvent quizEvent = event.getQuizEvent();

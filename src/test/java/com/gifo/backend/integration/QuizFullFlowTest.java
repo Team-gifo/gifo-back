@@ -192,10 +192,8 @@ class QuizFullFlowTest {
 
         // ── result: correctCount=2 (Q2+Q3), success=true (minCorrect=2) ──
 
-        // 일부러 틀린 correctCount(0)를 보내서 서버가 DB 기준으로 재계산하는지 검증
-        mockMvc.perform(post("/events/{eventUrl}/quiz/result", eventUrl)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"correctCount\":0}"))
+        // 서버가 DB에서 정답 수를 직접 계산하므로 body 없이 호출
+        mockMvc.perform(post("/events/{eventUrl}/quiz/result", eventUrl))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.correctCount").value(2))
