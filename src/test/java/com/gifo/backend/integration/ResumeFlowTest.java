@@ -73,8 +73,10 @@ class ResumeFlowTest {
         em.flush();
         em.clear();
 
-        mockMvc.perform(post("/events/RESUME01/capsules/draw"));
-        mockMvc.perform(post("/events/RESUME01/capsules/draw"));
+        mockMvc.perform(post("/events/RESUME01/capsules/draw"))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/events/RESUME01/capsules/draw"))
+                .andExpect(status().isOk());
 
         mockMvc.perform(get("/events/RESUME01"))
                 .andDo(print())
@@ -201,7 +203,9 @@ class ResumeFlowTest {
 
         mockMvc.perform(post("/events/RESUME04/quiz/answer")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"quizId\":" + q1.getQuizId() + ",\"selectedAnswer\":\"O\"}"));
+                .content("{\"quizId\":" + q1.getQuizId() + ",\"selectedAnswer\":\"O\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.correct").value(true));
 
         mockMvc.perform(get("/events/RESUME04"))
                 .andDo(print())
@@ -241,7 +245,10 @@ class ResumeFlowTest {
         // 1번 오답 → remainingAttempts=2
         mockMvc.perform(post("/events/RESUME06/quiz/answer")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"quizId\":" + q1.getQuizId() + ",\"selectedAnswer\":\"X\"}"));
+                .content("{\"quizId\":" + q1.getQuizId() + ",\"selectedAnswer\":\"X\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.correct").value(false))
+                .andExpect(jsonPath("$.data.remainingAttempts").value(2));
 
         mockMvc.perform(get("/events/RESUME06"))
                 .andDo(print())
