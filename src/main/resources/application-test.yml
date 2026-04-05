@@ -12,7 +12,7 @@ spring:
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
-      ddl-auto: update
+      ddl-auto: create-drop
 
 # TODO: StorageConfig가 @Value로 주입받는 값들 — 테스트에서 S3 실사용 안 하므로 더미값
 storage:

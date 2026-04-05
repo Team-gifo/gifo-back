@@ -183,15 +183,19 @@ class QuizFullFlowTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.content.quiz.currentQuizIndex").value(3))
                 .andExpect(jsonPath("$.data.content.quiz.answerHistory.length()").value(3))
+                .andExpect(jsonPath("$.data.content.quiz.list[0].answer").doesNotExist())
+                .andExpect(jsonPath("$.data.content.quiz.list[1].answer").doesNotExist())
+                .andExpect(jsonPath("$.data.content.quiz.list[2].answer").doesNotExist())
                 .andExpect(jsonPath("$.data.content.quiz.answerHistory[0].correct").value(false))
                 .andExpect(jsonPath("$.data.content.quiz.answerHistory[1].correct").value(true))
                 .andExpect(jsonPath("$.data.content.quiz.answerHistory[2].correct").value(true));
 
         // ── result: correctCount=2 (Q2+Q3), success=true (minCorrect=2) ──
 
+        // 일부러 틀린 correctCount(0)를 보내서 서버가 DB 기준으로 재계산하는지 검증
         mockMvc.perform(post("/events/{eventUrl}/quiz/result", eventUrl)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"correctCount\":2}"))
+                        .content("{\"correctCount\":0}"))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.correctCount").value(2))

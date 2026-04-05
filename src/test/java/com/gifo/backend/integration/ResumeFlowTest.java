@@ -108,12 +108,15 @@ class ResumeFlowTest {
         em.clear();
 
         String drawResult = mockMvc.perform(post("/events/RESUME09/capsules/draw"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.capsuleId").isNumber())
                 .andReturn().getResponse().getContentAsString();
         Long capsuleId = objectMapper.readTree(drawResult).path("data").path("capsuleId").asLong();
 
         mockMvc.perform(post("/events/RESUME09/capsules/select")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"capsuleId\":" + capsuleId + "}"));
+                .content("{\"capsuleId\":" + capsuleId + "}"))
+                .andExpect(status().isOk());
 
         // 선택 후에도 추가 뽑기 가능
         mockMvc.perform(post("/events/RESUME09/capsules/draw"))
