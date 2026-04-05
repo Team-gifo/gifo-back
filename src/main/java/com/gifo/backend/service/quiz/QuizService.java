@@ -140,7 +140,8 @@ public class QuizService {
      * 모든 문제 완료 후 서버가 DB에서 정답 수를 계산하여 보상 결정
      */
     public QuizResponse.Result getResult(String eventUrl) {
-        BirthdayEvent event = entityFinder.getEventByUrlOrThrow(eventUrl);
+        // 비관적 락으로 동시 result 호출 직렬화
+        BirthdayEvent event = entityFinder.getEventByUrlForUpdateOrThrow(eventUrl);
 
         QuizEvent quizEvent = event.getQuizEvent();
         if (quizEvent == null) {

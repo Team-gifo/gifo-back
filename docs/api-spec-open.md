@@ -569,6 +569,14 @@ POST /events/{eventUrl}/quiz/result
 | `correctCount` | int | 서버가 계산한 정답 수 |
 | `success` | boolean | 성공 여부 (`correctCount >= requiredCount`) |
 
+### 에러 케이스
+
+| 상황 | 에러 코드 | HTTP |
+|------|----------|------|
+| 모든 문제 미완료 | `QUIZ_NOT_ALL_ANSWERED` | 400 |
+| 퀴즈 이벤트 없음 | `QUIZ_NOT_FOUND` | 404 |
+| 이벤트 없음 | `EVENT_NOT_FOUND` | 404 |
+
 ---
 
 ## 6. 진행 데이터 리셋
