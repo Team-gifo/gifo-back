@@ -286,7 +286,9 @@ class ResumeFlowTest {
 
         mockMvc.perform(post("/events/RESUME07/quiz/answer")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"quizId\":" + q1.getQuizId() + ",\"selectedAnswer\":\"O\"}"));
+                .content("{\"quizId\":" + q1.getQuizId() + ",\"selectedAnswer\":\"O\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.correct").value(true));
 
         mockMvc.perform(delete("/events/RESUME07/progress"));
 
