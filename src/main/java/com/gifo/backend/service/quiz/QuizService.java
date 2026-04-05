@@ -154,11 +154,13 @@ public class QuizService {
             throw new QuizException(ErrorCode.QUIZ_NOT_ALL_ANSWERED);
         }
 
+        // 이미 결과가 확정된 경우 (중복 호출 방어) → 기존 결과 반환
+        if (quizEvent.getLastSuccess() != null) {
+            return new QuizResponse.Result(quizEvent.getLastCorrectCount(), quizEvent.getLastSuccess());
+        }
+
         // 서버가 DB에서 정답 수 계산
         int correctCount = (int) quizAnswerRepository.countByQuizEventAndCorrectTrue(quizEvent);
-
-        // 원자적 totalAttempt 증가 (동시성 안전)
-        quizEventRepository.incrementTotalAttempt(quizEvent.getQuizEventId());
 
         // 보상 규칙으로 성공 여부 판정
         boolean success = quizRewardRuleRepository
@@ -166,9 +168,13 @@ public class QuizService {
                 .filter(r -> r.getMinCorrect() != null && r.getMinCorrect() > 0)
                 .anyMatch(r -> correctCount >= r.getMinCorrect());
 
-        // 결과를 QuizEvent에 영속
+        // 결과를 QuizEvent에 먼저 영속 (increment 전에 저장해야 detach 문제 없음)
         quizEvent.setLastCorrectCount(correctCount);
         quizEvent.setLastSuccess(success);
+        quizEventRepository.flush();
+
+        // 최초 확정 시에만 totalAttempt 1회 증가
+        quizEventRepository.incrementTotalAttempt(quizEvent.getQuizEventId());
 
         return new QuizResponse.Result(correctCount, success);
     }
