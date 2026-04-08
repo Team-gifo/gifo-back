@@ -14,7 +14,14 @@
 2. **sub_title**: 위 조건에 맞는 한국어 메인 테마 문구 한 문장 (감동·개인화).
 3. **bgm**: 아래 목록 중 정확히 하나만 사용 (필수, null 금지).
    {{bgm_list}}
-4. **gallery**: 2개. 각 항목: title, image_url, description. image_url은 https://example.com/... 형태 placeholder.
+4. **gallery**: 1개. 각 항목: title, image_url, description. image_url은 https://example.com/... 형태 placeholder.
+   - gallery는 반드시 "함께 보낸 추억의 장면"이어야 함.
+   - 제목/설명은 순간 중심으로 작성하고, 매 요청마다 표현을 다양하게 바꿔야 함.
+   - 아래처럼 동일한 패턴/문구를 반복하지 말 것:
+     "친구와 함께했던 여름", "우리가 함께했던 졸업식"
+   - title은 구체적인 장면/시간/장소를 드러내는 한국어 문장형으로 작성.
+   - description은 title을 보완하는 디테일(감정, 대화, 분위기, 행동)을 1문장으로 작성.
+   - 금지: 선물/상품/아이템/보상/상자 소개 문구 (예: "선물 상자", "아이템 모음", "보상", "추천 상품").
 
 ## content (게임 콘텐츠)
 **content** 필드를 반드시 넣어줘. 아래 게임 스펙 중 **무작위로 1개** 골라, 관계·상황·톤에 맞는 내용으로 채워줘. 선택하지 않은 게임은 content 안에 키를 넣지 마.

@@ -34,4 +34,8 @@ public class SurveyRequestDto {
 
     @Schema(description = "대상을 부를 이름 (선택, 개인화 문구에 반영)")
     private String targetName;
+
+    @Schema(description = "추억 갤러리 이미지 생성 여부 (체크한 경우에만 이미지 생성)")
+    @Builder.Default
+    private Boolean generateGalleryImages = false;
 }

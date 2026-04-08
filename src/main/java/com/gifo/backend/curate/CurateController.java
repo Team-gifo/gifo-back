@@ -1,6 +1,7 @@
 package com.gifo.backend.curate;
 
 import com.gifo.backend.curate.dto.CurateResponseDto;
+import com.gifo.backend.curate.dto.CurateImageEnrichRequestDto;
 import com.gifo.backend.curate.dto.SurveyRequestDto;
 import com.gifo.backend.global.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -25,5 +26,19 @@ public class CurateController {
     public ApiResponse<CurateResponseDto> curate(@Valid @RequestBody SurveyRequestDto request) {
         CurateResponseDto data = curateService.curate(request);
         return ApiResponse.success("큐레이션 생성 완료", data);
+    }
+
+    @PostMapping("/create-base")
+    @Operation(summary = "기본 큐레이션 생성(이미지 제외)", description = "텍스트/게임/갤러리 구조만 먼저 생성합니다.")
+    public ApiResponse<CurateResponseDto> curateBase(@Valid @RequestBody SurveyRequestDto request) {
+        CurateResponseDto data = curateService.curateWithoutImages(request);
+        return ApiResponse.success("기본 큐레이션 생성 완료", data);
+    }
+
+    @PostMapping("/enrich-images")
+    @Operation(summary = "큐레이션 이미지 생성", description = "기본 큐레이션의 gallery 항목에 이미지 URL(data URI 포함)을 바인딩합니다.")
+    public ApiResponse<CurateResponseDto> enrichImages(@Valid @RequestBody CurateImageEnrichRequestDto request) {
+        CurateResponseDto data = curateService.enrichImages(request.getSurvey(), request.getCurate());
+        return ApiResponse.success("큐레이션 이미지 생성 완료", data);
     }
 }

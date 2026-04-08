@@ -19,6 +19,10 @@ spring:
       openai:
         api-key: ${AZURE_OPENAI_API_KEY}
         endpoint: ${AZURE_OPENAI_ENDPOINT}
+        client:
+          http:
+            connect-timeout: 30s
+            response-timeout: 300s
         chat:
           options:
             deployment-name: ${AZURE_OPENAI_DEPLOYMENT_NAME}

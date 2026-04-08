@@ -2,6 +2,7 @@ package com.gifo.backend.curate;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gifo.backend.curate.dto.CurateResponseDto;
+import com.gifo.backend.curate.dto.GalleryItemDto;
 import com.gifo.backend.curate.dto.SurveyRequestDto;
 import com.gifo.backend.curate.dto.content.*;
 import com.gifo.backend.curate.prompt.CuratePromptLoader;
@@ -24,9 +25,32 @@ public class CurateService {
     private final ChatClient chatClient;
     private final ObjectMapper objectMapper;
     private final CuratePromptLoader promptLoader;
+    private final AzureImageGenerationService imageGenerationService;
 
     public CurateResponseDto curate(SurveyRequestDto survey) {
+        boolean withImages = Boolean.TRUE.equals(survey.getGenerateGalleryImages());
+        return curateInternal(survey, withImages);
+    }
+
+    public CurateResponseDto curateWithoutImages(SurveyRequestDto survey) {
+        return curateInternal(survey, false);
+    }
+
+    public CurateResponseDto enrichImages(SurveyRequestDto survey, CurateResponseDto curate) {
+        if (curate == null) {
+            throw new CustomException(ErrorCode.AI_CURATE_ERROR, "이미지 생성 대상 큐레이션 데이터가 비어 있습니다.");
+        }
+        enrichGalleryImages(curate, survey);
+        return curate;
+    }
+
+    private CurateResponseDto curateInternal(SurveyRequestDto survey, boolean withImages) {
+        log.info("[Curate] 요청 수신 - relationship={}, situation={}, tone={}, targetAge={}, targetName={}",
+                survey.getRelationship(), survey.getSituation(), survey.getTone(),
+                survey.getTargetAge(), survey.getTargetName());
+
         String userMessage = promptLoader.loadPrompt(survey);
+        log.debug("[Curate] 생성된 프롬프트 (length={}): {}", userMessage.length(), userMessage);
 
         try {
             String raw = chatClient.prompt()
@@ -38,7 +62,12 @@ public class CurateService {
                 throw new CustomException(ErrorCode.AI_CURATE_ERROR, "AI 응답이 비어 있습니다.");
             }
 
+            String rawPreview = raw.length() > 1000 ? raw.substring(0, 1000) + "..." : raw;
+            log.debug("[Curate] Azure OpenAI 원본 응답 (preview): {}", rawPreview);
+
             String json = stripMarkdownJson(raw);
+            log.debug("[Curate] JSON 추출 결과 (length={}): {}", json.length(), json);
+
             CurateResponseDto result = objectMapper.readValue(json, CurateResponseDto.class);
 
             if (result == null) {
@@ -51,11 +80,26 @@ public class CurateService {
             if (result.getContent() == null || !hasAnyGame(result.getContent())) {
                 result.setContent(buildExampleContent());
             }
+            // 갤러리는 1장만 사용하도록 서버에서 최종 강제
+            limitGalleryToOne(result);
+
+            if (withImages) {
+                enrichGalleryImages(result, survey);
+            }
+
+            log.info("[Curate] 큐레이션 생성 완료 - user={}, bgm={}, hasGallery={}, hasGacha={}, hasQuiz={}, hasUnboxing={}",
+                    result.getUser(),
+                    result.getBgm(),
+                    result.getGallery() != null && !result.getGallery().isEmpty(),
+                    result.getContent() != null && result.getContent().getGacha() != null,
+                    result.getContent() != null && result.getContent().getQuiz() != null,
+                    result.getContent() != null && result.getContent().getUnboxing() != null
+            );
             return result;
         } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
-            log.warn("AI 큐레이션 생성 실패: {}", e.getMessage());
+            log.warn("AI 큐레이션 생성 실패", e);
             throw new CustomException(ErrorCode.AI_CURATE_ERROR,
                     e.getMessage() != null ? e.getMessage() : ErrorCode.AI_CURATE_ERROR.getDefaultMessage());
         }
@@ -80,6 +124,80 @@ public class CurateService {
             }
         }
         return trimmed;
+    }
+
+    private void enrichGalleryImages(CurateResponseDto result, SurveyRequestDto survey) {
+        if (result.getGallery() == null || result.getGallery().isEmpty()) {
+            log.info("[Curate-Image] gallery 항목이 없어 이미지 생성을 건너뜁니다.");
+            return;
+        }
+
+        log.info("[Curate-Image] gallery 이미지 생성 시작 - itemCount={}", result.getGallery().size());
+
+        for (int i = 0; i < result.getGallery().size(); i++) {
+            GalleryItemDto galleryItem = result.getGallery().get(i);
+            try {
+                String prompt = buildImagePrompt(survey, galleryItem);
+                log.info("[Curate-Image] item 이미지 생성 요청 - index={}, title={}, descLength={}, promptLength={}",
+                        i,
+                        galleryItem.getTitle(),
+                        galleryItem.getDescription() != null ? galleryItem.getDescription().length() : 0,
+                        prompt.length());
+
+                String generatedUrl = imageGenerationService.generateImageUrl(prompt);
+                if (generatedUrl != null && !generatedUrl.isBlank()) {
+                    galleryItem.setImageUrl(generatedUrl);
+                    log.info("[Curate-Image] item 이미지 바인딩 완료 - index={}, title={}, url={}",
+                            i, galleryItem.getTitle(), generatedUrl);
+                } else {
+                    log.warn("[Curate-Image] item 이미지 생성 결과 없음 - index={}, title={}",
+                            i, galleryItem.getTitle());
+                }
+            } catch (Exception e) {
+                log.warn("[Curate-Image] gallery 이미지 바인딩 실패 - index={}, title={}", i, galleryItem.getTitle(), e);
+            }
+        }
+
+        log.info("[Curate-Image] gallery 이미지 생성 종료");
+    }
+
+    private String buildImagePrompt(SurveyRequestDto survey, GalleryItemDto galleryItem) {
+        return """
+                Create a warm, shared-memory scene image for a memory gallery.
+                Relationship: %s
+                Situation: %s
+                Tone: %s
+                Target age group: %s
+                Target name: %s
+                Memory title: %s
+                Memory description: %s
+                Requirements:
+                - Depict a real moment they shared together (event/place/time/interaction).
+                - Focus on people and atmosphere, not products or gifts.
+                - Do NOT depict gift boxes, product shots, rewards, or item catalog style.
+                Style: clean, emotionally touching, realistic illustration, no text, no watermark.
+                """.formatted(
+                nullSafe(survey.getRelationship()),
+                nullSafe(survey.getSituation()),
+                nullSafe(survey.getTone()),
+                nullSafe(survey.getTargetAge()),
+                nullSafe(survey.getTargetName()),
+                nullSafe(galleryItem.getTitle()),
+                nullSafe(galleryItem.getDescription())
+        );
+    }
+
+    private String nullSafe(String value) {
+        return value == null ? "" : value;
+    }
+
+    private void limitGalleryToOne(CurateResponseDto result) {
+        if (result.getGallery() == null || result.getGallery().isEmpty()) {
+            return;
+        }
+        if (result.getGallery().size() > 1) {
+            result.setGallery(List.of(result.getGallery().get(0)));
+        }
     }
 
     private boolean hasAnyGame(ContentDto content) {
