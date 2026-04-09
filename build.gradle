@@ -56,9 +56,11 @@ dependencies {
 	// AWS S3 SDK (Lightsail Object Storage S3 호환)
 	implementation platform('software.amazon.awssdk:bom:2.29.52')
 	implementation 'software.amazon.awssdk:s3'
+	implementation 'software.amazon.awssdk:auth'
 
 	// 이미지 압축
 	implementation 'net.coobird:thumbnailator:0.4.20'
+
 }
 
 tasks.named('test') {
