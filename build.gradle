@@ -60,8 +60,6 @@ dependencies {
 	// 이미지 압축
 	implementation 'net.coobird:thumbnailator:0.4.20'
 
-	// WebP 이미지 포맷 지원
-	implementation 'org.sejda.imageio:webp-imageio:0.1.6'
 }
 
 tasks.named('test') {

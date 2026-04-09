@@ -118,6 +118,20 @@ public class StorageService {
         if (!ALLOWED_CONTENT_TYPES.contains(contentType) || !ALLOWED_EXTENSIONS.contains(extension)) {
             throw new StorageException(ErrorCode.INVALID_FILE_TYPE);
         }
+
+        // 확장자와 무관하게 실제 WebP 파일 거부 (RIFF....WEBP 시그니처)
+        try {
+            byte[] header = file.getBytes();
+            if (header.length >= 12
+                    && header[0] == 'R' && header[1] == 'I' && header[2] == 'F' && header[3] == 'F'
+                    && header[8] == 'W' && header[9] == 'E' && header[10] == 'B' && header[11] == 'P') {
+                throw new StorageException(ErrorCode.INVALID_FILE_TYPE);
+            }
+        } catch (StorageException e) {
+            throw e;
+        } catch (IOException e) {
+            throw new StorageException(ErrorCode.EMPTY_FILE);
+        }
     }
 
     private String extractExtension(String filename) {
