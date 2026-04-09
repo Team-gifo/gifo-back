@@ -22,6 +22,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.UUID;
 
@@ -66,33 +67,30 @@ public class StorageService {
     }
 
     private byte[] compress(MultipartFile file) throws IOException {
-        try {
-            // webp-imageio가 ServiceLoader로 등록되어 WebP 포함 모든 포맷 지원
-            BufferedImage original = ImageIO.read(new ByteArrayInputStream(file.getBytes()));
-            if (original == null) {
-                throw new IOException("지원하지 않는 이미지 포맷입니다.");
-            }
-
-            // JPEG는 알파 채널 미지원 → 흰 배경 RGB로 변환
-            BufferedImage rgb = new BufferedImage(original.getWidth(), original.getHeight(), BufferedImage.TYPE_INT_RGB);
-            java.awt.Graphics2D g = rgb.createGraphics();
-            try {
-                g.drawImage(original, 0, 0, java.awt.Color.WHITE, null);
-            } finally {
-                g.dispose();
-            }
-
-            ByteArrayOutputStream output = new ByteArrayOutputStream();
-            Thumbnails.of(rgb)
-                    .size(1920, 1920)
-                    .keepAspectRatio(true)
-                    .outputFormat("JPEG")
-                    .outputQuality(0.8)
-                    .toOutputStream(output);
-            return output.toByteArray();
-        } catch (Exception e) {
-            throw new IOException("이미지 파일을 읽을 수 없습니다: " + e.getMessage(), e);
+        byte[] bytes = file.getBytes();
+        // JPEG/PNG 지원 (WebP는 validate()에서 거부됨)
+        BufferedImage original = ImageIO.read(new ByteArrayInputStream(bytes));
+        if (original == null) {
+            throw new IOException("지원하지 않는 이미지 포맷입니다.");
         }
+
+        // JPEG는 알파 채널 미지원 → 흰 배경 RGB로 변환
+        BufferedImage rgb = new BufferedImage(original.getWidth(), original.getHeight(), BufferedImage.TYPE_INT_RGB);
+        java.awt.Graphics2D g = rgb.createGraphics();
+        try {
+            g.drawImage(original, 0, 0, java.awt.Color.WHITE, null);
+        } finally {
+            g.dispose();
+        }
+
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        Thumbnails.of(rgb)
+                .size(1920, 1920)
+                .keepAspectRatio(true)
+                .outputFormat("JPEG")
+                .outputQuality(0.8)
+                .toOutputStream(output);
+        return output.toByteArray();
     }
 
     public void delete(String imageUrl) {
@@ -119,10 +117,11 @@ public class StorageService {
             throw new StorageException(ErrorCode.INVALID_FILE_TYPE);
         }
 
-        // 확장자와 무관하게 실제 WebP 파일 거부 (RIFF....WEBP 시그니처)
-        try {
-            byte[] header = file.getBytes();
-            if (header.length >= 12
+        // 확장자와 무관하게 실제 WebP 파일 거부 (RIFF....WEBP 시그니처) — 12바이트만 읽어 메모리 절약
+        try (InputStream is = file.getInputStream()) {
+            byte[] header = new byte[12];
+            int read = is.read(header);
+            if (read == 12
                     && header[0] == 'R' && header[1] == 'I' && header[2] == 'F' && header[3] == 'F'
                     && header[8] == 'W' && header[9] == 'E' && header[10] == 'B' && header[11] == 'P') {
                 throw new StorageException(ErrorCode.INVALID_FILE_TYPE);
