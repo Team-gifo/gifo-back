@@ -70,7 +70,12 @@ public class StorageService {
 
             // JPEG는 알파 채널 미지원 → RGB로 변환
             BufferedImage rgb = new BufferedImage(original.getWidth(), original.getHeight(), BufferedImage.TYPE_INT_RGB);
-            rgb.createGraphics().drawImage(original, 0, 0, java.awt.Color.WHITE, null);
+            java.awt.Graphics2D g = rgb.createGraphics();
+            try {
+                g.drawImage(original, 0, 0, java.awt.Color.WHITE, null);
+            } finally {
+                g.dispose();
+            }
 
             Thumbnails.of(rgb)
                     .scale(1)
