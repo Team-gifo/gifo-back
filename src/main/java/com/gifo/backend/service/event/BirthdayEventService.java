@@ -174,7 +174,8 @@ public class BirthdayEventService {
                         d.getCapsule().getGift().getGiftName(),
                         d.getCapsule().getGift().getGiftImageUrl(),
                         d.getCapsule().getGift().getDescription(),
-                        d.getSelected()))
+                        d.getSelected(),
+                        d.getCreatedAt()))
                 .toList();
 
         return new EventResponse.GachaContent(

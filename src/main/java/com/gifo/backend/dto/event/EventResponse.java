@@ -1,5 +1,6 @@
 package com.gifo.backend.dto.event;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -62,7 +63,8 @@ public class EventResponse {
             String giftName,
             String giftImageUrl,
             String description,
-            boolean selected
+            boolean selected,
+            LocalDateTime drawnAt
     ) {}
 
     /**
