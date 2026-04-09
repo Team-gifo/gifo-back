@@ -15,6 +15,7 @@ import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 
+import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -62,9 +63,17 @@ public class StorageService {
     private byte[] compress(MultipartFile file) throws IOException {
         try (InputStream in = file.getInputStream();
              ByteArrayOutputStream output = new ByteArrayOutputStream()) {
-            Thumbnails.of(in)
+            BufferedImage original = Thumbnails.of(in)
                     .size(1920, 1920)
                     .keepAspectRatio(true)
+                    .asBufferedImage();
+
+            // JPEG는 알파 채널 미지원 → RGB로 변환
+            BufferedImage rgb = new BufferedImage(original.getWidth(), original.getHeight(), BufferedImage.TYPE_INT_RGB);
+            rgb.createGraphics().drawImage(original, 0, 0, java.awt.Color.WHITE, null);
+
+            Thumbnails.of(rgb)
+                    .scale(1)
                     .outputFormat("JPEG")
                     .outputQuality(0.8)
                     .toOutputStream(output);
