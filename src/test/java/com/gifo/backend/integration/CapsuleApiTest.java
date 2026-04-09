@@ -136,7 +136,8 @@ class CapsuleApiTest {
                 .andExpect(jsonPath("$.data.content.gacha.drawHistory.length()").value(3))
                 .andExpect(jsonPath("$.data.content.gacha.drawHistory[0].capsuleId").isNumber())
                 .andExpect(jsonPath("$.data.content.gacha.drawHistory[0].giftName").isString())
-                .andExpect(jsonPath("$.data.content.gacha.drawHistory[0].selected").value(false));
+                .andExpect(jsonPath("$.data.content.gacha.drawHistory[0].selected").value(false))
+                .andExpect(jsonPath("$.data.content.gacha.drawHistory[0].drawnAt").isString());
     }
 
     @Test

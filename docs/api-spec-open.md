@@ -195,14 +195,16 @@ GET /events/{eventUrl}
         "giftName": "양말 세트",
         "giftImageUrl": "https://example.com/socks.jpg",
         "description": "따뜻한 양말 세트!",
-        "selected": false
+        "selected": false,
+        "drawnAt": "2026-04-09T22:30:00"
       },
       {
         "capsuleId": 7,
         "giftName": "에어팟 프로",
         "giftImageUrl": "https://example.com/airpods.jpg",
         "description": "축하해요!",
-        "selected": false
+        "selected": false,
+        "drawnAt": "2026-04-09T22:31:15"
       }
     ]
   },
@@ -227,6 +229,7 @@ GET /events/{eventUrl}
 | `drawHistory[].giftImageUrl` | String | 뽑힌 선물 이미지 URL |
 | `drawHistory[].description` | String | 선물 설명 |
 | `drawHistory[].selected` | boolean | 최종 선택 여부 |
+| `drawHistory[].drawnAt` | String (ISO 8601) | 당첨 시각 (예: `"2026-04-09T22:30:00"`) |
 
 ---
 
