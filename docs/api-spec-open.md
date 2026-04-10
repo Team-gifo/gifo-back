@@ -381,7 +381,8 @@ POST /events/{eventUrl}/capsules/draw
     "capsuleId": 3,
     "giftName": "에어팟 프로",
     "giftImageUrl": "https://example.com/airpods.jpg",
-    "description": "축하해요! 에어팟 프로를 뽑았습니다!"
+    "description": "축하해요! 에어팟 프로를 뽑았습니다!",
+    "drawnAt": "2026-04-10T14:30:00"
   }
 }
 ```
@@ -392,6 +393,7 @@ POST /events/{eventUrl}/capsules/draw
 | `giftName` | String | 뽑힌 선물 이름 |
 | `giftImageUrl` | String | 뽑힌 선물 이미지 URL |
 | `description` | String | 선물 설명 |
+| `drawnAt` | String (ISO 8601) | 당첨 시각 (기프티콘 프레임 이미지 생성 시 표기용, 예: `"2026-04-10T14:30:00"`) |
 
 ### 에러 케이스
 

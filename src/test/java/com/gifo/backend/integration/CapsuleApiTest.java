@@ -117,7 +117,8 @@ class CapsuleApiTest {
                 .andExpect(jsonPath("$.data.capsuleId").isNumber())
                 .andExpect(jsonPath("$.data.giftName").isString())
                 .andExpect(jsonPath("$.data.giftImageUrl").isString())
-                .andExpect(jsonPath("$.data.description").isString());
+                .andExpect(jsonPath("$.data.description").isString())
+                .andExpect(jsonPath("$.data.drawnAt").isString()); // 당첨 시각
     }
 
     @Test
