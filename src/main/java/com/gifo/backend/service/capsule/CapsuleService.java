@@ -72,8 +72,8 @@ public class CapsuleService {
         // 가중치 기반 랜덤 추첨
         Capsule drawn = weightedRandom(remaining);
 
-        // 뽑기 이력 저장 (selected=false)
-        capsuleDrawRepository.save(CapsuleDraw.builder()
+        // 뽑기 이력 저장 (selected=false) — createdAt이 당첨 시각
+        CapsuleDraw savedDraw = capsuleDrawRepository.save(CapsuleDraw.builder()
                 .capsuleEvent(capsuleEvent)
                 .capsule(drawn)
                 .build());
@@ -83,7 +83,8 @@ public class CapsuleService {
                 drawn.getCapsuleId(),
                 gift.getGiftName(),
                 gift.getGiftImageUrl(),
-                gift.getDescription());
+                gift.getDescription(),
+                savedDraw.getCreatedAt());
     }
 
     /**

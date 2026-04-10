@@ -112,6 +112,7 @@ class ResumeFlowTest {
         String drawResult = mockMvc.perform(post("/events/RESUME09/capsules/draw"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.capsuleId").isNumber())
+                .andExpect(jsonPath("$.data.drawnAt").isString()) // 당첨 시각
                 .andReturn().getResponse().getContentAsString();
         Long capsuleId = objectMapper.readTree(drawResult).path("data").path("capsuleId").asLong();
 

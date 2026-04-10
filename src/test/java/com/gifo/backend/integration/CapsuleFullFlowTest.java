@@ -97,6 +97,7 @@ class CapsuleFullFlowTest {
             String result = mockMvc.perform(post("/events/{eventUrl}/capsules/draw", eventUrl))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.data.capsuleId").isNumber())
+                    .andExpect(jsonPath("$.data.drawnAt").isString()) // 당첨 시각
                     .andReturn().getResponse().getContentAsString();
             drawnCapsuleIds[i] = objectMapper.readTree(result).path("data").path("capsuleId").asLong();
         }
@@ -124,6 +125,7 @@ class CapsuleFullFlowTest {
             String result = mockMvc.perform(post("/events/{eventUrl}/capsules/draw", eventUrl))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.data.capsuleId").isNumber())
+                    .andExpect(jsonPath("$.data.drawnAt").isString()) // 당첨 시각
                     .andReturn().getResponse().getContentAsString();
             drawnCapsuleIds[i] = objectMapper.readTree(result).path("data").path("capsuleId").asLong();
         }
