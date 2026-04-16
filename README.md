@@ -149,33 +149,33 @@ com.gifo.backend/
     <td align="center" width="160">
       <!-- 프로필 이미지 -->
       <br />
-      <b>saaad99</b><br />
+      <b>심동훈</b><br />
       <a href="https://github.com/saaad99">@saaad99</a>
     </td>
     <td align="center" width="160">
       <!-- 프로필 이미지 -->
       <br />
-      <b>Jangdol</b><br />
-      <a href="https://github.com/Jangdol">@Jangdol</a>
+      <b>장현석</b><br />
+      <a href="https://github.com/Janghyeonsuk">@Jangdol</a>
     </td>
     <td align="center" width="160">
       <!-- 프로필 이미지 -->
       <br />
-      <b>Hwangsedong</b><br />
-      <a href="https://github.com/Hwangsedong">@Hwangsedong</a>
+      <b>황세동</b><br />
+      <a href="https://github.com/HwangSedong">@Hwangsedong</a>
     </td>
     <td align="center" width="160">
       <!-- 프로필 이미지 -->
       <br />
-      <b>ParkJunYoung</b><br />
-      <a href="https://github.com/ParkJunYoung">@ParkJunYoung</a>
+      <b>박준영</b> 👑<br />
+      <a href="https://github.com/PlayTheApp">@ParkJunYoung</a>
     </td>
   </tr>
   <tr>
     <td align="center">Backend</td>
     <td align="center">Backend</td>
     <td align="center">Backend</td>
-    <td align="center">Backend</td>
+    <td align="center">Frontend · 팀장</td>
   </tr>
 </table>
 
@@ -183,10 +183,10 @@ com.gifo.backend/
 
 | 팀원 | 담당 영역 | 주요 작업 |
 |------|----------|----------|
-| **saaad99** | 프로젝트 설정 / 파일 업로드 / 이벤트 생성 | 공통 응답·예외 체계, Swagger, 헬스체크, 엔티티 설계 및 아키텍처 가이드 작성, 생일 이벤트 생성 API, 이미지 업로드 API (Lightsail S3 연동·WebP 감지·자동 압축), BGM 업로드 및 프리셋 조회 API, CORS 설정, prod 프로파일 |
-| **Jangdol** | 이벤트 조회 / 캡슐 / 퀴즈 / 인프라 | Dockerfile·CI/CD 배포 트리거, BaseEntity 공통 타임스탬프, CodeRabbit 코드리뷰 설정, 이벤트 전체 콘텐츠 조회·리셋 API, 캡슐 뽑기·선택 API, 퀴즈 답안 제출·결과 조회 API, 퀴즈 서버 채점 전환, 통합 테스트 20건+, JVM 타임존 고정 |
-| **Hwangsedong** | AI 연동 | Azure OpenAI 초기 설정, Spring AI 의존성 구성, AI Curate API (설문 기반 선물 추천) |
-| **ParkJunYoung** | 프로젝트 초기 구성 | Spring Boot 프로젝트 생성 |
+| **심동훈** | 프로젝트 설정 / 파일 업로드 / 이벤트 생성 | 공통 응답·예외 체계, Swagger, 헬스체크, 엔티티 설계 및 아키텍처 가이드 작성, 생일 이벤트 생성 API, 이미지 업로드 API (Lightsail S3 연동·WebP 감지·자동 압축), BGM 업로드 및 프리셋 조회 API, CORS 설정, prod 프로파일 |
+| **장현석** | 이벤트 조회 / 캡슐 / 퀴즈 / 인프라 | Dockerfile·CI/CD 배포 트리거, BaseEntity 공통 타임스탬프, CodeRabbit 코드리뷰 설정, 이벤트 전체 콘텐츠 조회·리셋 API, 캡슐 뽑기·선택 API, 퀴즈 답안 제출·결과 조회 API, 퀴즈 서버 채점 전환, 통합 테스트 20건+, JVM 타임존 고정 |
+| **황세동** | AI 연동 | Azure OpenAI 초기 설정, Spring AI 의존성 구성, AI Curate API (설문 기반 선물 추천) |
+| **박준영** 👑 팀장 | 프로젝트 초기 구성 | Spring Boot 프로젝트 생성 |
 
 ## CI/CD
 
