@@ -54,7 +54,10 @@ public enum ErrorCode {
     BGM_UPLOAD_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "BGM은 최대 3개까지 업로드할 수 있습니다."),
 
     // 외부 API 오류
-    NAVER_API_ERROR(HttpStatus.BAD_GATEWAY, "네이버 쇼핑 API 호출에 실패했습니다.");
+    NAVER_API_ERROR(HttpStatus.BAD_GATEWAY, "네이버 쇼핑 API 호출에 실패했습니다."),
+
+    // AI 큐레이션 오류
+    AI_CURATE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "AI 큐레이션 생성에 실패했습니다.");
 
     private final HttpStatus httpStatus;
     private final String defaultMessage;

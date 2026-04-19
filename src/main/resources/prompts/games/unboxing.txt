@@ -1,0 +1,4 @@
+### unboxing (선물 개봉)
+- **before_open**: image_url, description. (개봉 전 상자·문구)
+- **after_open**: item_name, image_url. (개봉 후 선물)
+- 상황에 맞는 선물 하나로 구성.

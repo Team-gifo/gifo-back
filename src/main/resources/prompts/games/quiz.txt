@@ -1,0 +1,5 @@
+### quiz (퀴즈 이벤트)
+- **success_reward**: required_count, item_name, image_url. (맞춘 개수 기준 충족 시 보상)
+- **fail_reward**: item_name, image_url. (기준 미달 시 참가상)
+- **list**: 배열. 항목: quiz_id(1부터), type("multiple_choice"|"subjective"|"ox"), title, image_url, description, hint, options(배열, 주관식/ox면 []), answer(배열), play_limit(숫자).
+- 관계·상황에 맞는 퀴즈 1~3문항.
